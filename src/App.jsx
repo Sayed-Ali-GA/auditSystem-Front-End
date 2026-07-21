@@ -5,7 +5,9 @@ import Brands from './components/Admin/Brands/Brands'
 import Criteria from './components/Admin/Criteria/Criteria'
 import Location from './components/Admin/Location/Location'
 import OpsManager from './components/Admin/OpsManager/OpsManager'
-import StoreManagers from './components/StoreManager/StoreManager'
+import StoreManagers from './components/Admin/StoreManager/StoreManager'
+import Stores from './components/Admin/StoresPage/Store'
+
 
 import './App.css'
 
@@ -44,6 +46,11 @@ function App() {
           <Route
               path="/StoreManagers"
               element={<StoreManagers />}
+          />
+
+          <Route 
+              path="/Stores"
+              element={<Stores />}
           />
 
 

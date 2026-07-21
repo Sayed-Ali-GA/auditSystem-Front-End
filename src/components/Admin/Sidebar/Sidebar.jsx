@@ -29,6 +29,10 @@ const Sidebar = () => {
          Store Managers
         </NavLink>
 
+        <NavLink to="/Stores">
+         Stores
+        </NavLink>
+
       </nav>
 
     </aside>

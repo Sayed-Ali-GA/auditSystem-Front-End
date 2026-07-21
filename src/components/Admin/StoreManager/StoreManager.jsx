@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 
 
-import storeManagerService from "../../services/StoreManagerServices"
+import storeManagerService from "../../../services/StoreManagerServices"
 
 
 
@@ -49,6 +49,9 @@ const StoreManafers = () => {
                             <th>Oracle ID</th>
                             <th>Brand</th>
                             <th>Location</th>
+                            <th>Edit</th>
+                            <th>Delete</th>
+
                         </tr>
                 </thead>
 
@@ -61,6 +64,9 @@ const StoreManafers = () => {
                                 <td>{storeManager.oracleid}</td>
                                 <td>{storeManager.brandname}</td>
                                 <td>{storeManager.locationname}</td>
+
+                                <td> <Link to={`/StoreManagers/${storeManager.opsmanagerid}`}>Edit</Link> </td>
+                                <td><Link to={`/StoreManagers/${storeManager.opsmanagerid}/delete`}>Delete</Link></td>
                             </tr>
                         ))}
                 </tbody>
