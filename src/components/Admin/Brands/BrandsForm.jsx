@@ -37,6 +37,7 @@ const BrandForm = ({ handleAddBrand }) => {
                         name="BrandName"
                         value={brandData.BrandName}
                         onChange={handleChange}
+                        required
                         placeholder="e.g. R & B"
                     />
         </p>
