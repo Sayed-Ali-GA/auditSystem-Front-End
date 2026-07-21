@@ -7,9 +7,10 @@ import Location from './components/Admin/Location/Location'
 import OpsManager from './components/Admin/OpsManager/OpsManager'
 import StoreManagers from './components/Admin/StoreManager/StoreManager'
 import Stores from './components/Admin/StoresPage/Store'
-
+import AuditPoint from './components/Admin/AuditPoints/AuditPoints'
 
 import './App.css'
+
 
 
 function App() {
@@ -51,6 +52,11 @@ function App() {
           <Route 
               path="/Stores"
               element={<Stores />}
+          />
+
+          <Route 
+              path="/audit-points"
+              element={<AuditPoint />}
           />
 
 

@@ -33,6 +33,10 @@ const Sidebar = () => {
          Stores
         </NavLink>
 
+        <NavLink to="/audit-points">
+         Audit Point
+        </NavLink>
+
       </nav>
 
     </aside>
