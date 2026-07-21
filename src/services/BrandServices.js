@@ -18,6 +18,30 @@ const index = async () => {
   }
 };
 
+
+const create = async (brandData) => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/brands`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(brandData),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to create brand");
+    }
+
+    return await response.json();
+
+  } catch (error) {
+    console.error("Error creating brand:", error);
+    throw error;
+  }
+};
+
 export default {
-  index
+  index,
+  create,
 };
