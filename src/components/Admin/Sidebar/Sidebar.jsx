@@ -25,6 +25,10 @@ const Sidebar = () => {
           Ops Managers
         </NavLink>
 
+        <NavLink to="/StoreManagers">
+         Store Managers
+        </NavLink>
+
       </nav>
 
     </aside>
