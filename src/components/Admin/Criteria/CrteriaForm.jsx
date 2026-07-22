@@ -52,3 +52,4 @@ const CrteriaForm = ({handleAddCrteria}) => {
 }
 
 export default CrteriaForm;
+

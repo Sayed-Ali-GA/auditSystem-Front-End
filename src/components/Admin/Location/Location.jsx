@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import locationService from "../../../services/locationServices";
-
+import LocationForm from "./LocationForm";
 
 
 const Location = () => {
@@ -31,8 +31,27 @@ const Location = () => {
 
   // console.log(locations);
 
+
+  const handleAddLocation = async (locationData) => {
+    try {
+        const newLocation = await locationService.create(locationData);
+          setLocations([
+           ...locations,
+            newLocation
+        ]);
+
+    } catch (error) {
+        console.log(error)
+    }
+  }
+
   return (
         <>
+
+        <h2>Add new Location</h2>
+          <LocationForm 
+            handleAddLocation={handleAddLocation}
+          />
 
       <h1>Location</h1>
 

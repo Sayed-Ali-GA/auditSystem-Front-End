@@ -19,6 +19,34 @@ const index = async () => {
   }
 };
 
+
+
+
+
+
+const create = async (locationData) => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/Location`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(locationData),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to create Location");
+    }
+
+    return await response.json();
+
+  } catch (error) {
+    console.error("Error creating Location:", error);
+    throw error;
+  }
+};
+
 export default {
-  index
-};  
+  index,
+  create,
+};   
