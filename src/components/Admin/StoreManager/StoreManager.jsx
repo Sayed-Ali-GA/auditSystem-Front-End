@@ -4,13 +4,19 @@ import { Link } from "react-router-dom";
 
 
 import storeManagerService from "../../../services/StoreManagerServices"
+import brandService from "../../../services/BrandServices"
+import locationServices from "../../../services/locationServices"
+
+
+import StoreManagerForm from "./StoreManagerForm"
 
 
 
-
-const StoreManafers = () => {
-    const [StoreManagers, setStoreManagers] = useState([])
+const StoreManagers = () => {
+    const [storeManagers, setStoreManagers] = useState([])
     const [loading, setLoading] = useState(true);
+    const [brands, setBrands] = useState([]);
+    const [locations, setLocations] = useState([]);
 
 
     useEffect(() => {
@@ -29,15 +35,59 @@ const StoreManafers = () => {
     }, []); 
 
 
+
+    
+        useEffect(() => {
+            const getBrands = async () => {
+            const data = await brandService.index();
+                setBrands(data);
+        };
+        getBrands();
+    }, []);
+
+
+    useEffect(() => {
+        const getLocations = async () => {
+            const data = await locationServices.index();
+                setLocations(data);
+        };
+            getLocations()
+    }, []);
+
+
+
+
     if (loading) {
         return <h2>Loading...</h2>
     }
 
-    console.log("Store Managers: ", StoreManagers)
+    // console.log("Store Managers: ", StoreManagers)
+
+     const handleAddStoreManager = async (storeManagerData) => {
+        try {
+            const newStoreManager = await storeManagerService.create(storeManagerData);
+              setStoreManagers([
+               ...storeManagers,
+                newStoreManager
+            ]);
+    
+        } catch (error) {
+            console.log(error)
+        }
+      }
+    
 
 
     return(
         <>
+
+        <h2>Add New Stoer Manager</h2>
+            <StoreManagerForm
+                brands={brands}
+                locations={locations}
+                handleAddStoreManager={handleAddStoreManager}
+            />
+
             <h1>Store Managers</h1>
 
             <table>
@@ -57,7 +107,7 @@ const StoreManafers = () => {
 
 
                 <tbody>
-                        {StoreManagers.map((storeManager) => (
+                        {storeManagers.map((storeManager) => (
                             <tr key={storeManager.storemanagerid}>
                                 <td>{storeManager.storemanagerid}</td>
                                 <td>{storeManager.storemanagername}</td>
@@ -77,7 +127,7 @@ const StoreManafers = () => {
 
  }
 
-export default StoreManafers;
+export default StoreManagers;
 
 
 

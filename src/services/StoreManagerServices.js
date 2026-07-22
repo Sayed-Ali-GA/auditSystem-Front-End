@@ -20,8 +20,35 @@ const index = async () => {
   }
 };
 
+
+
+
+const create = async (storeManagerData) => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/StoreManagers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(storeManagerData),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to create Store Manager");
+    }
+
+    return await response.json();
+
+  } catch (error) {
+    console.error("Error creating Store Manager:", error);
+    throw error;
+  }
+};
+
 export default {
-  index
-};  
+  index,
+  create,
+};
+
 
 
