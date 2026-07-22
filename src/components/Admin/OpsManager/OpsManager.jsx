@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import OpsManagerService from "../../../services/OpsManagerServices";
 import "./OpsManager.css";
 import { Link } from "react-router-dom";
+import OpsManagerForm from "./OpsManagerForm";
 
 
 const OpsManager = () => {
@@ -35,8 +36,29 @@ const OpsManager = () => {
 //   console.log(opsManagers);
 
 
+
+  const handleAddOpsManager = async (opsManagerData) => {
+    try {
+        const newOpsManager = await OpsManagerService.create(opsManagerData);
+          setOpsManagers([
+           ...opsManagers,
+            newOpsManager
+        ]);
+
+    } catch (error) {
+        console.log(error)
+    }
+  }
+
+
+
   return (
     <>
+
+    <h2>Add New Ops Manager</h2>
+      <OpsManagerForm 
+        handleAddOpsManager={handleAddOpsManager}
+      />
 
       <h1>Ops Managers</h1>
 
