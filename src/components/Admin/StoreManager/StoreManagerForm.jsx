@@ -37,6 +37,7 @@ const StoreManagerForm = ({brands, locations, handleAddStoreManager}) => {
   };
 
 
+  
     const brandOptions = brands.map((brand) => ({
         value: brand.brandid,
         label: brand.brandname,
