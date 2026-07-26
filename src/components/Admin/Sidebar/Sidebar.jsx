@@ -9,6 +9,10 @@ const Sidebar = () => {
 
       <nav>
 
+        <NavLink to={'/Home'}>
+          Home
+        </NavLink>
+
         <NavLink to="/brands">
           Brands
         </NavLink>

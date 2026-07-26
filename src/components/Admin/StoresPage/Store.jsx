@@ -5,6 +5,7 @@ import brandService from "../../../services/BrandServices";
 import locationServices from "../../../services/locationServices";
 import storeServices from "../../../services/StoreServices";
 import OpsManagerServices from "../../../services/OpsManagerServices";
+import storeManagerServices from '../../../services/StoreManagerServices'
 
 import StoreForm from "./StoreForm";
 
@@ -16,6 +17,23 @@ const Stores = () => {
     const [brands, setBrands] = useState([]);
     const [locations, setLocations] = useState([]);
     const [opsManagers, setOpsManagers] = useState([]);
+    const [storeManagers, setStoreManagers] = useState([]);
+
+
+    // Get Store Managers
+
+        useEffect(() => {
+            const getStoreManagers = async () => {
+                try {
+                        const data = await storeManagerServices.index();
+                            setStoreManagers(data)
+                } catch (error) {
+                    console.log(error)
+                }
+            }
+             getStoreManagers()
+        }, []);
+
 
 
     // Get Stores
@@ -104,6 +122,7 @@ const Stores = () => {
                 brands={brands}
                 locations={locations}
                 opsManagers={opsManagers}
+                storeManagers={storeManagers}
                 handleAddStore={handleAddStore}
             />
 
@@ -116,6 +135,7 @@ const Stores = () => {
                         <th>Brand</th>
                         <th>Location</th>
                         <th>Ops Manager</th>
+                        <th>Store Manager</th>
                         <th>Edit</th>
                         <th>Delete</th>
                     </tr>
@@ -142,6 +162,10 @@ const Stores = () => {
 
                             <td>
                                 {store.opsmanagername}
+                            </td>
+
+                            <td>
+                                {store.storemanagername}
                             </td>
 
                             <td>

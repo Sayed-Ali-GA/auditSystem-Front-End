@@ -8,6 +8,7 @@ import OpsManager from './components/Admin/OpsManager/OpsManager'
 import StoreManagers from './components/Admin/StoreManager/StoreManager'
 import Stores from './components/Admin/StoresPage/Store'
 import AuditPoint from './components/Admin/AuditPoints/AuditPoints'
+import HomePage from './components/Admin/HomePage/HomePage'
 
 import './App.css'
 
@@ -23,6 +24,11 @@ function App() {
       <main className="content">
 
         <Routes>
+
+          <Route 
+            path='/Home'
+            element={<HomePage />}
+          />
 
           <Route 
             path="/brands" 
