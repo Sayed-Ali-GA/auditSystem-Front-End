@@ -43,7 +43,7 @@ const LocationForm = ({handleAddLocation}) => {
                     </p>
 
                     <button type="submit">
-                        Add Location
+                        Save Location
                     </button>
             </form>
         </>

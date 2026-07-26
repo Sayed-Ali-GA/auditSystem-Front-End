@@ -44,7 +44,7 @@ const BrandForm = ({ handleAddBrand }) => {
 
 
       <button type="submit">
-        Add Brand
+        Save Brand
       </button>
 
     </form>

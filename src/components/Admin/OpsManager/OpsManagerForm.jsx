@@ -58,7 +58,7 @@ const OpsManagerForm = ({handleAddOpsManager}) => {
                     </p>
 
                     <button type="submit">
-                        Add Location
+                        Save Ops Manager
                     </button>
             </form>
         </>

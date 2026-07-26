@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Swal from "sweetalert2";
 
 
 import OpsManagerService from "../../../services/OpsManagerServices";
@@ -49,7 +50,42 @@ const OpsManager = () => {
         console.log(error)
     }
   }
+  
 
+  const handleDeleteOpsManager = async (opsmanagerid) => {
+        const result = await Swal.fire({
+          title: "Are you sure?",
+          text: "You won't be able to undo this!",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "Yes, delete it!",
+          cancelButtonText: "Cancel",
+        });
+      
+        if (!result.isConfirmed) return;
+      
+        try {
+          await OpsManagerService.remove(opsmanagerid);
+      
+          setOpsManagers((prev) =>
+            prev.filter((opsManagers) => opsManagers.opsmanagerid !== opsmanagerid)
+          );
+      
+          Swal.fire({
+            title: "Deleted!",
+            text: `"The Ops Manager has been deleted."`,
+            icon: "success",
+          });
+        } catch (error) {
+          Swal.fire({
+            title: "Error!",
+            text: "This Ops Manager is assigned to one or more.",
+            icon: "error",
+          });
+        }
+      };
+    
+  
 
 
   return (
@@ -79,8 +115,16 @@ const OpsManager = () => {
                     <td>{opsManager.opsmanagerid}</td>
                     <td>{opsManager.opsmanagername}</td>
                     <td>{opsManager.oracleid}</td>
+
+
                     <td> <Link to={`/opsmanagers/${opsManager.opsmanagerid}`}>Edit</Link> </td>
-                    <td><Link to={`/opsmanagers/${opsManager.opsmanagerid}/delete`}>Delete</Link></td>
+
+                  <td>
+                    <button onClick={() => handleDeleteOpsManager(opsManager.opsmanagerid)}>
+                       Delete
+                    </button>
+                </td>
+
                 </tr>
              ))}
         </tbody>

@@ -43,7 +43,7 @@ const CrteriaForm = ({handleAddCrteria}) => {
                     </p>
 
                     <button type="submit">
-                        Add Crteria
+                        Save Crteria
                     </button>
             </form>
         </>
