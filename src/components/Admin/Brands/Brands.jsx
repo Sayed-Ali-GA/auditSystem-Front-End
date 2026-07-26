@@ -86,7 +86,7 @@ const handleDeleteBrand = async (brandid) => {
   } catch (error) {
     Swal.fire({
       title: "Error!",
-      text: "Failed to delete the brand.",
+      text: "This Brand is assigned to one or more.",
       icon: "error",
     });
   }

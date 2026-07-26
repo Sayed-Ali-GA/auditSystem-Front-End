@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
 
 import locationService from "../../../services/locationServices";
 import LocationForm from "./LocationForm";
@@ -45,6 +46,46 @@ const Location = () => {
     }
   }
 
+
+
+  const handleDeleteLocation = async (locationid) => {
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to undo this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, delete it!",
+        cancelButtonText: "Cancel",
+      });
+    
+      if (!result.isConfirmed) return;
+    
+      try {
+        await locationService.remove(locationid);
+    
+        setLocations((prev) =>
+          prev.filter((locations) => locations.locationid !== locationid)
+        );
+    
+        Swal.fire({
+          title: "Deleted!",
+          text: `"The Location has been deleted."`,
+          icon: "success",
+        });
+      } catch (error) {
+        Swal.fire({
+          title: "Error!",
+          text: "This location is assigned to one or more.",
+          icon: "error",
+        });
+      }
+    };
+  
+
+
+
+
+
   return (
         <>
 
@@ -70,8 +111,18 @@ const Location = () => {
                 <tr key={location.locationid}>
                   <td>{location.locationid}</td>
                     <td>{location.locationname}</td>
+
+
                     <td> <Link to={`/location/${location.locationid}`}>Edit</Link> </td>
-                    <td><Link to={`/location/${location.locationid}/delete`}>Delete</Link></td>
+
+
+
+                  <td>
+                    <button onClick={() => handleDeleteLocation(location.locationid)}>
+                       Delete
+                    </button>
+                </td>
+
                 </tr>
              ))}
         </tbody>
