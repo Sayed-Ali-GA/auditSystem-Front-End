@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
 
 
 
@@ -75,7 +76,42 @@ const StoreManagers = () => {
             console.log(error)
         }
       }
+
+
     
+
+      const handleDeleteStoreManager = async (storemanagerid) => {
+              const result = await Swal.fire({
+                title: "Are you sure?",
+                text: "You won't be able to undo this!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, delete it!",
+                cancelButtonText: "Cancel",
+              });
+            
+              if (!result.isConfirmed) return;
+            
+              try {
+                await storeManagerService.remove(storemanagerid);
+            
+                setStoreManagers((prev) =>
+                  prev.filter((storeManagers) => storeManagers.storemanagerid !== storemanagerid)
+                );
+            
+                Swal.fire({
+                  title: "Deleted!",
+                  text: `"The Store Manager has been deleted."`,
+                  icon: "success",
+                });
+              } catch (error) {
+                Swal.fire({
+                  title: "Error!",
+                  text: "This Store Manager is assigned to one or more.",
+                  icon: "error",
+                });
+              }
+            };
 
 
     return(
@@ -116,7 +152,13 @@ const StoreManagers = () => {
                                 <td>{storeManager.locationname}</td>
 
                                 <td> <Link to={`/StoreManagers/${storeManager.opsmanagerid}`}>Edit</Link> </td>
-                                <td><Link to={`/StoreManagers/${storeManager.opsmanagerid}/delete`}>Delete</Link></td>
+
+
+                <td>
+                    <button onClick={() => handleDeleteStoreManager(storeManager.storemanagerid)}>
+                       Delete
+                    </button>
+                </td>
                             </tr>
                         ))}
                 </tbody>
