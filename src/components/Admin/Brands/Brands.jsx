@@ -138,10 +138,10 @@ const handleDeleteBrand = async (brandid) => {
 
              
            <td>
-  <button onClick={() => handleDeleteBrand(brand.brandid)}>
-    Delete
-  </button>
-</td>
+              <button onClick={() => handleDeleteBrand(brand.brandid)}>
+                Delete
+              </button>
+          </td>
 
             </tr>
 

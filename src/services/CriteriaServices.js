@@ -44,7 +44,33 @@ const create = async (criteriaData) => {
   }
 };
 
+
+
+
+
+
+
+const remove = async (id) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to delete Criteria");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting Criteria:", error);
+    throw error;
+  }
+};
+
+
 export default {
   index,
   create,
-};   
+  remove,
+  
+};

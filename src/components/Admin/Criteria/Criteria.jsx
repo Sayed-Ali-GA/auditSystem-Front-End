@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import Swal from "sweetalert2";
+
 
 
 import criteriaService from "../../../services/CriteriaServices";
@@ -46,6 +48,41 @@ const Criteria = () => {
 
 
 
+
+  const handleDeleteCriteria = async (majorcriteriaid) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to undo this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    });
+  
+    if (!result.isConfirmed) return;
+  
+    try {
+      await criteriaService.remove(majorcriteriaid);
+  
+      setCriteria((prev) =>
+        prev.filter((criteria) => criteria.majorcriteriaid !== majorcriteriaid)
+      );
+  
+      Swal.fire({
+        title: "Deleted!",
+        text: `"The Criteria has been deleted."`,
+        icon: "success",
+      });
+    } catch (error) {
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to delete the Criteria.",
+        icon: "error",
+      });
+    }
+  };
+
+
   // console.log(criteria);
 
 
@@ -74,8 +111,18 @@ const Criteria = () => {
                 <tr key={criteria.majorcriteriaid}>
                     <td>{criteria.majorcriteriaid}</td>
                     <td>{criteria.majorcriterianame}</td>
+
+
                     <td> <Link to={`/criteria/${criteria.opsmanagerid}`}>Edit</Link> </td>
-                    <td><Link to={`/criteria/${criteria.opsmanagerid}/delete`}>Delete</Link></td>
+
+
+
+                <td>
+                    <button onClick={() => handleDeleteCriteria(criteria.majorcriteriaid)}>
+                       Delete
+                    </button>
+                </td>
+
                 </tr>
              ))}
         </tbody>
