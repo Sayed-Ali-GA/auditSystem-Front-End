@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
+
 
 import BrandForm from "./BrandsForm";
 import brandService from "../../../services/BrandServices";
@@ -57,6 +59,41 @@ const Brands = () => {
 
 
 
+const handleDeleteBrand = async (brandid) => {
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "You won't be able to undo this!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!",
+    cancelButtonText: "Cancel",
+  });
+
+  if (!result.isConfirmed) return;
+
+  try {
+    await brandService.remove(brandid);
+
+    setBrands((prev) =>
+      prev.filter((brand) => brand.brandid !== brandid)
+    );
+
+    Swal.fire({
+      title: "Deleted!",
+      text: `"The brand has been deleted."`,
+      icon: "success",
+    });
+  } catch (error) {
+    Swal.fire({
+      title: "Error!",
+      text: "Failed to delete the brand.",
+      icon: "error",
+    });
+  }
+};
+
+
+
   return (
     <>
 
@@ -99,11 +136,12 @@ const Brands = () => {
                 </Link>
               </td>
 
-              <td>
-                <Link to={`/brands/${brand.brandid}/delete`}>
-                  Delete
-                </Link>
-              </td>
+             
+           <td>
+  <button onClick={() => handleDeleteBrand(brand.brandid)}>
+    Delete
+  </button>
+</td>
 
             </tr>
 
