@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
+
 
 import brandService from "../../../services/BrandServices";
 import locationServices from "../../../services/locationServices";
@@ -94,6 +96,42 @@ const Stores = () => {
     }, []);
 
 
+       const handleDeleteStore = async (storeserial) => {
+                  const result = await Swal.fire({
+                    title: "Are you sure?",
+                    text: "You won't be able to undo this!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete it!",
+                    cancelButtonText: "Cancel",
+                  });
+                
+                  if (!result.isConfirmed) return;
+                
+                  try {
+                    await storeServices.remove(storeserial);
+                
+                    setStores((prev) =>
+                      prev.filter((stores) => stores.storeserial !== storeserial)
+                    );
+                
+                    Swal.fire({
+                      title: "Deleted!",
+                      text: `"The Store has been deleted."`,
+                      icon: "success",
+                    });
+                  } catch (error) {
+                    Swal.fire({
+                      title: "Error!",
+                      text: "Failed to delete the Store.",
+                      icon: "error",
+                    });
+                  }
+                };
+    
+
+
+
     if (loading) {
         return <h2>Loading...</h2>;
     }
@@ -174,11 +212,12 @@ const Stores = () => {
                                 </Link>
                             </td>
 
-                            <td>
-                                <Link to={`/Stores/${store.storeserial}/delete`}>
-                                    Delete
-                                </Link>
-                            </td>
+                <td>
+                    <button onClick={() => handleDeleteStore(store.storeserial)}>
+                       Delete
+                    </button>
+                </td>
+
                         </tr>
                     ))}
                 </tbody>
