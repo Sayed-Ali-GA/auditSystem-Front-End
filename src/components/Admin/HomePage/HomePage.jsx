@@ -7,6 +7,7 @@ import brandService from "../../../services/BrandServices";
 import locationServices from "../../../services/locationServices";
 import OpsManagerServices from "../../../services/OpsManagerServices";
 import storeManagerServices from "../../../services/StoreManagerServices";
+import AuditPointsServices from "../../../services/AuditPointsServices";
 
 import "./HomePage.css";
 
@@ -17,6 +18,7 @@ import "./HomePage.css";
 
 const HomePage = () => {
 
+    const [auditPoint, setAuditPoint] = useState([])
     const [stores, setStores] = useState([]);
     const [brands, setBrands] = useState([]);
     const [locations, setLocations] = useState([]);
@@ -38,6 +40,21 @@ const HomePage = () => {
 
         getStoreManagers();
     }, []);
+
+
+        useEffect(() => {
+        const getAuditPoint = async () => {
+            try {
+                const data = await AuditPointsServices.index();
+                setAuditPoint(data);
+            } catch (error) {
+                console.log(error);
+            }
+        };
+
+        getAuditPoint();
+    }, []);
+    
 
 
 
@@ -154,6 +171,13 @@ const HomePage = () => {
                 <div className="card">
                     <h3>Store Managers</h3>
                     <h2>{storeManagers.length}</h2>
+                </div>
+            </Link>
+
+            <Link to="/audit-points"> 
+                <div className="card">
+                    <h3>Audit</h3>
+                    <h2>{auditPoint.length}</h2>
                 </div>
             </Link>
 

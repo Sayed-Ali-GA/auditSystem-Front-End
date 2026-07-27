@@ -92,6 +92,8 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import Swal from "sweetalert2";
+
 
 import auditPointServices from "../../../services/AuditPointsServices";
 import AuditPointForm from "./AuditPointForm";
@@ -126,6 +128,46 @@ const AuditPoint = () => {
             console.log(error);
         }
     };
+
+
+
+           const handleDeleteAudit = async (auditpointid) => {
+                const result = await Swal.fire({
+                    title: "Are you sure?",
+                    text: "You won't be able to undo this!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete it!",
+                    cancelButtonText: "Cancel"
+                });
+        
+                if (!result.isConfirmed) return;
+        
+                try {
+                    await auditPointServices.remove(auditpointid);
+        
+                    setAuditPoints((prev) =>
+                        prev.filter(
+                            (auditPoints) =>
+                                auditPoints.auditpointid !== auditpointid
+                        )
+                    );
+        
+                    Swal.fire({
+                        title: "Deleted!",
+                        text: "The Store Manager has been deleted.",
+                        icon: "success"
+                    });
+        
+                } catch (error) {
+                    Swal.fire({
+                        title: "Error!",
+                        text: "Cannot delete this Audit.",
+                        icon: "error"
+                    });
+                }
+            };
+
 
     if (loading) {
         return <h2>Loading...</h2>;
@@ -170,8 +212,11 @@ const AuditPoint = () => {
                             <td>{auditPoint.weightage}</td>
 
                             <td>
-                                <Link to="">View</Link>
+                                <button onClick={() => handleDeleteAudit(auditPoint.auditpointid)}>
+                                    Delete
+                                </button>
                             </td>
+
                         </tr>
                     ))}
                 </tbody>
