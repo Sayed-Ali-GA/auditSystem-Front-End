@@ -17,10 +17,7 @@ const parseResponseBody = async (response) => {
 };
 
 
-// Centralized fetch wrapper: attaches auth header, handles 401s,
-// and normalizes error handling so each service method stays thin.
-// Pass { skipAuthRedirect: true } for public endpoints (like login) where
-// a 401 means "wrong credentials", not "session expired".
+
 const apiRequest = async (path, options = {}, { skipAuthRedirect = false } = {}) => {
 
     const token = localStorage.getItem("token");
@@ -44,7 +41,7 @@ const apiRequest = async (path, options = {}, { skipAuthRedirect = false } = {})
         localStorage.removeItem("token");
         window.location.href = "/login";
         // Stop further handling; redirect is in progress.
-        throw new Error("Session expired. Please log in again.");
+        throw new Error("Session expired. Please Sign in again.");
     }
 
     const data = await parseResponseBody(response);
@@ -59,7 +56,6 @@ const apiRequest = async (path, options = {}, { skipAuthRedirect = false } = {})
 
 const userService = {
 
-    // Log in with OracleID + Password. Returns { token, user }.
     login: (credentials) => apiRequest(
         "/login",
         {

@@ -1,51 +1,106 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
+import { jwtDecode } from "jwt-decode";
 
 const AuthContext = createContext(null);
 
+
+const getUserFromToken = () => {
+
+    const token = localStorage.getItem("token");
+
+    if (!token) return null;
+
+    try {
+
+        const decoded = jwtDecode(token);
+
+        return {
+            UserID: decoded.UserID,
+            OracleID: decoded.OracleID,
+            RoleID: decoded.RoleID,
+            LocationID: decoded.LocationID
+        };
+
+    } catch (error) {
+
+        return null;
+
+    }
+};
+
+
+
 export const AuthProvider = ({ children }) => {
 
-    const [token, setToken] = useState(() => localStorage.getItem("token"));
-    const [user, setUser] = useState(() => {
-        const stored = localStorage.getItem("user");
-        try {
-            return stored ? JSON.parse(stored) : null;
-        } catch {
-            return null;
-        }
-    });
 
-    // Called after a successful userService.login() call.
-    const login = useCallback(({ token: newToken, user: newUser }) => {
+    const [token, setToken] = useState(() =>
+        localStorage.getItem("token")
+    );
+
+
+    const [user, setUser] = useState(() =>
+        getUserFromToken()
+    );
+
+
+
+    const login = useCallback(({ token: newToken }) => {
+
         localStorage.setItem("token", newToken);
-        localStorage.setItem("user", JSON.stringify(newUser));
+
+        const decoded = jwtDecode(newToken);
+
+        const userData = {
+            UserID: decoded.UserID,
+            OracleID: decoded.OracleID,
+            RoleID: decoded.RoleID,
+            LocationID: decoded.LocationID,
+            UserName: decoded.UserName
+        };
+
+
         setToken(newToken);
-        setUser(newUser);
+        setUser(userData);
+
+
     }, []);
+
+
 
     const logout = useCallback(() => {
+
         localStorage.removeItem("token");
-        localStorage.removeItem("user");
+
         setToken(null);
         setUser(null);
+
     }, []);
 
+
+
     const value = {
+
         token,
         user,
         isAuthenticated: Boolean(token),
         login,
         logout
+
     };
+
 
     return (
         <AuthContext.Provider value={value}>
             {children}
         </AuthContext.Provider>
     );
+
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
+
+
 export const useAuth = () => {
+
     const context = useContext(AuthContext);
 
     if (!context) {
@@ -53,4 +108,5 @@ export const useAuth = () => {
     }
 
     return context;
+
 };

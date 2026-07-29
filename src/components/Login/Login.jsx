@@ -27,14 +27,14 @@ const Login = () => {
         setIsSubmitting(true);
 
         try {
-            const data = await userService.login({ OracleID, Password });
+            const data = await userService.login ({ 
+                OracleID,
+                Password 
+            });
 
-            // Updates context state as well as localStorage, so the
-            // Sidebar and route guards react immediately.
             login(data);
 
             navigate("/");
-
         } catch (err) {
             setError(err.message || "Failed to log in.");
         } finally {

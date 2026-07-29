@@ -7,10 +7,9 @@ import React from "react";
 
         return (
             <>
-                <h1>Audit</h1>
+                <h1>Audit Form</h1>
             </>
         )
     }
 
-
-export default AuditForm;
+export default AuditForm
