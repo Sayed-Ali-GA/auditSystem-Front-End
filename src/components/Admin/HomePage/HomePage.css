@@ -43,3 +43,14 @@
     color: #111827;
     margin: 0;
 }
+
+.role-badge{
+    display:inline-block;
+    margin-top:10px;
+    padding:6px 14px;
+    background:#1f2937;
+    color:#fff;
+    border-radius:20px;
+    font-size:14px;
+    font-weight:600;
+}

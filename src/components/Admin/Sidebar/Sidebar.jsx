@@ -57,6 +57,10 @@ const Sidebar = () => {
                         <NavLink to="/audit-points">
                             Audit Point
                         </NavLink>
+
+                        <NavLink to="/Audits">
+                            Audits
+                        </NavLink>
                     </>
                     
                 )}
@@ -65,6 +69,10 @@ const Sidebar = () => {
                     <>
                         <NavLink to="/audit-points">
                             Audit Point
+                        </NavLink>
+
+                        <NavLink to="/Audits">
+                            Audits
                         </NavLink>
                     </>
                  )}
@@ -75,6 +83,10 @@ const Sidebar = () => {
                     <>
                         <NavLink to="/audit">
                             Audit
+                        </NavLink>
+
+                        <NavLink to="/Audits">
+                            Past Audits
                         </NavLink>
                     </>
                  )}

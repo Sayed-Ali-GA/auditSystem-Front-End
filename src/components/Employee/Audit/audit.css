@@ -1,0 +1,228 @@
+/* Shared styling for the Audit pages (Form, Details, List, View) */
+
+:root {
+    --audit-primary: #1f5f4f;
+    --audit-primary-dark: #17453a;
+    --audit-bg: #f6f8f7;
+    --audit-surface: #ffffff;
+    --audit-border: #e0e4e2;
+    --audit-text: #1c2624;
+    --audit-muted: #667a73;
+    --audit-danger: #c94f4f;
+    --audit-warning: #c98a2c;
+    --audit-radius: 10px;
+}
+
+.audit-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 20px 60px;
+    color: var(--audit-text);
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+.audit-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.audit-header h1 {
+    font-size: 1.6rem;
+    margin: 0;
+}
+
+.audit-header .subtitle {
+    color: var(--audit-muted);
+    font-size: 0.9rem;
+    margin-top: 4px;
+}
+
+.audit-card {
+    background: var(--audit-surface);
+    border: 1px solid var(--audit-border);
+    border-radius: var(--audit-radius);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.audit-field-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 8px;
+}
+
+.audit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 220px;
+}
+
+.audit-field label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--audit-muted);
+}
+
+.audit-field input,
+.audit-field textarea,
+.audit-field select {
+    border: 1px solid var(--audit-border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: var(--audit-bg);
+}
+
+.audit-field input:focus,
+.audit-field textarea:focus,
+.audit-field select:focus {
+    outline: 2px solid var(--audit-primary);
+    outline-offset: 1px;
+}
+
+.audit-store-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.audit-store-item span {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--audit-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.audit-store-item strong {
+    font-size: 1rem;
+}
+
+.audit-store-item select {
+    border: 1px solid var(--audit-border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    background: var(--audit-bg);
+    font-weight: 600;
+}
+
+.audit-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--audit-border);
+    border-radius: var(--audit-radius);
+}
+
+table.audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--audit-surface);
+    font-size: 0.9rem;
+}
+
+table.audit-table th,
+table.audit-table td {
+    border-bottom: 1px solid var(--audit-border);
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+
+table.audit-table thead th {
+    background: var(--audit-bg);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--audit-muted);
+}
+
+table.audit-table tbody tr:hover {
+    background: #fafcfb;
+}
+
+.audit-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.audit-badge.Low {
+    background: #e4f3ea;
+    color: var(--audit-primary-dark);
+}
+
+.audit-badge.Moderate {
+    background: #fbf0da;
+    color: var(--audit-warning);
+}
+
+.audit-badge.High {
+    background: #fbe4e4;
+    color: var(--audit-danger);
+}
+
+.audit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--audit-primary);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.audit-btn:hover {
+    background: var(--audit-primary-dark);
+}
+
+.audit-btn.secondary {
+    background: transparent;
+    color: var(--audit-primary);
+    border: 1px solid var(--audit-primary);
+}
+
+.audit-btn.danger {
+    background: var(--audit-danger);
+}
+
+.audit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.audit-empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--audit-muted);
+}
+
+.audit-error {
+    background: #fbe4e4;
+    color: var(--audit-danger);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    margin-bottom: 16px;
+}
+
+.audit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
+}

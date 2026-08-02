@@ -37,15 +37,12 @@ const HomePage = () => {
                 console.log(error);
             }
         };
-
         getStoreManagers();
-
     }, []);
 
 
 
     useEffect(() => {
-
         const getAuditPoints = async () => {
             try {
                 const data = await AuditPointsServices.index();
@@ -54,113 +51,74 @@ const HomePage = () => {
                 console.log(error);
             }
         };
-
         getAuditPoints();
 
     }, []);
 
 
 
-
     useEffect(() => {
-
         const getStores = async () => {
-
             try {
-
                 const data = await storeServices.index();
                 setStores(data);
-
             } catch (error) {
-
                 console.log(error);
-
             } finally {
-
                 setLoading(false);
-
             }
-
         };
-
         getStores();
 
     }, []);
 
 
 
-
     useEffect(() => {
-
         const getBrands = async () => {
-
             try {
-
                 const data = await brandService.index();
                 setBrands(data);
-
             } catch (error) {
-
                 console.log(error);
-
             }
-
         };
-
         getBrands();
-
     }, []);
 
 
 
-
     useEffect(() => {
-
         const getLocations = async () => {
-
             try {
-
                 const data = await locationServices.index();
                 setLocations(data);
-
             } catch (error) {
-
                 console.log(error);
-
             }
-
         };
-
         getLocations();
-
     }, []);
 
 
-
-
     useEffect(() => {
-
         const getOpsManagers = async () => {
-
             try {
-
                 const data = await OpsManagerServices.index();
                 setOpsManagers(data);
-
             } catch (error) {
-
                 console.log(error);
-
             }
-
         };
-
         getOpsManagers();
 
     }, []);
 
-
-
+    const roleName = {
+        1: "Admin",
+        2: "Ops Manager",
+        3: "Auditor"
+    }[currentUser?.RoleID];
 
     if (loading) {
         return <h2>Loading...</h2>;
@@ -171,12 +129,13 @@ const HomePage = () => {
 
     return (
 
-        <div className="home-page">
+                <div className="home-page">
 
 
-            <h1>
-                Welcome, {currentUser?.UserName || "User"}
-            </h1>
+        <div className="user-info">
+            <h1>Welcome back, {currentUser?.UserName}</h1>
+            <span className="role-badge">{roleName}</span>
+        </div>
 
 
             <p>

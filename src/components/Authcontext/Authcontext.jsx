@@ -18,7 +18,8 @@ const getUserFromToken = () => {
             UserID: decoded.UserID,
             OracleID: decoded.OracleID,
             RoleID: decoded.RoleID,
-            LocationID: decoded.LocationID
+            LocationID: decoded.LocationID,
+            UserName: decoded.UserName
         };
 
     } catch (error) {

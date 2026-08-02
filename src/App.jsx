@@ -16,8 +16,12 @@ import AuditPoint from "./components/Admin/AuditPoints/AuditPoints";
 import HomePage from "./components/Admin/HomePage/HomePage";
 import Login from "./components/Login/Login";
 
-import "./App.css";
+import AuditDetails from './components/Employee/Audit/AuditDetails'
 import AuditForm from "./components/Employee/Audit/AuditForm";
+import AuditsList from "./components/Employee/Audit/Auditslist";
+import AuditView from "./components/Employee/Audit/Auditview";
+
+import "./App.css";
 
 
 function AppShell() {
@@ -114,7 +118,27 @@ function AppShell() {
                         path="/audit" 
                         element={<AuditForm />} 
                     />
+
+                    <Route 
+                        path="/AuditDetails/:storeId" 
+                        element={<AuditDetails />} 
+                    />
             
+            </Route>
+
+            
+            <Route element={<ProtectedRoute allowedRoles={[1,2,3]} />}>
+
+                    <Route
+                        path="/Audits"
+                        element={<AuditsList />}
+                    />
+
+                    <Route
+                        path="/Audits/:id"
+                        element={<AuditView />}
+                    />
+
             </Route>
 
 
