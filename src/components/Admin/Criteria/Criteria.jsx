@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
-
-
 import criteriaService from "../../../services/CriteriaServices";
-import { Link } from "react-router-dom";
 import CriteriaForm from "./CrteriaForm";
 
 
@@ -12,44 +9,90 @@ const Criteria = () => {
 
   const [criteria, setCriteria] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingCriteria, setEditingCriteria] = useState(null);
+
 
   useEffect(() => {
+
     const getCriteria = async () => {
       try {
         const data = await criteriaService.index();
         setCriteria(data);
+
       } catch (error) {
         console.log(error);
+
       } finally {
         setLoading(false);
       }
     };
+
     getCriteria();
 
   }, []);
 
-  if (loading) {
-    return <h2>Loading...</h2>;
-  }
 
 
-  const handleAddCrteria = async (crteriaData) => {
+  const handleAddCriteria = async (criteriaData) => {
     try {
-        const newCrteria = await criteriaService.create(crteriaData);
-          setCriteria([
-            ...criteria,
-            newCrteria
-          ]);
-    } catch (error) {
-        console.log(error)
-    }
-  }
 
+      if (editingCriteria) {
+
+        const updatedCriteria = await criteriaService.update(
+          editingCriteria.majorcriteriaid,
+          criteriaData
+        );
+
+
+        setCriteria((prev) =>
+          prev.map((criteria) =>
+            criteria.majorcriteriaid === editingCriteria.majorcriteriaid
+              ? updatedCriteria
+              : criteria
+          )
+        );
+
+
+        setEditingCriteria(null);
+
+
+        Swal.fire({
+          icon: "success",
+          title: "Updated!",
+          text: "Criteria updated successfully.",
+        });
+
+
+      } else {
+
+        const newCriteria = await criteriaService.create(criteriaData);
+
+
+        setCriteria((prev) => [
+          ...prev,
+          newCriteria
+        ]);
+
+
+        Swal.fire({
+          icon: "success",
+          title: "Added!",
+          text: "Criteria added successfully.",
+        });
+
+      }
+
+
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
 
 
 
   const handleDeleteCriteria = async (majorcriteriaid) => {
+
     const result = await Swal.fire({
       title: "Are you sure?",
       text: "You won't be able to undo this!",
@@ -58,78 +101,129 @@ const Criteria = () => {
       confirmButtonText: "Yes, delete it!",
       cancelButtonText: "Cancel",
     });
-  
+
+
     if (!result.isConfirmed) return;
-  
+
+
     try {
+
       await criteriaService.remove(majorcriteriaid);
-  
+
+
       setCriteria((prev) =>
-        prev.filter((criteria) => criteria.majorcriteriaid !== majorcriteriaid)
+        prev.filter(
+          (criteria) =>
+            criteria.majorcriteriaid !== majorcriteriaid
+        )
       );
-  
+
+
       Swal.fire({
         title: "Deleted!",
-        text: `"The Criteria has been deleted."`,
+        text: "The Criteria has been deleted.",
         icon: "success",
       });
+
+
     } catch (error) {
+
       Swal.fire({
         title: "Error!",
         text: "Failed to delete the Criteria.",
         icon: "error",
       });
+
     }
   };
 
 
-  // console.log(criteria);
+
+  if (loading) {
+    return <h2>Loading...</h2>;
+  }
+
 
 
   return (
-        <>
+    <>
 
-        <h2>Add New Crteria</h2>
-          <CriteriaForm 
-            handleAddCrteria={handleAddCrteria}
-          />
+      <h2>
+        {editingCriteria ? "Edit Criteria" : "Add New Criteria"}
+      </h2>
+
+
+      <CriteriaForm
+        handleAddCriteria={handleAddCriteria}
+        editingCriteria={editingCriteria}
+      />
+
+
 
       <h1>Criteria</h1>
 
-    <table>
+
+      <table>
+
         <thead>
-            <tr>
-                <th>Sl. No.</th>
-                <th>Criteria</th>
-                <th>Edit</th>
-                <th>Delete</th>
-            </tr>
+          <tr>
+            <th>Sl. No.</th>
+            <th>Criteria</th>
+            <th>Edit</th>
+            <th>Delete</th>
+          </tr>
         </thead>
 
+
         <tbody>
-            {criteria.map((criteria) => (
-                <tr key={criteria.majorcriteriaid}>
-                    <td>{criteria.majorcriteriaid}</td>
-                    <td>{criteria.majorcriterianame}</td>
+
+          {criteria.map((criteria) => (
+
+            <tr key={criteria.majorcriteriaid}>
+
+              <td>
+                {criteria.majorcriteriaid}
+              </td>
 
 
-                    <td> <Link to={`/criteria/${criteria.opsmanagerid}`}>Edit</Link> </td>
+              <td>
+                {criteria.majorcriterianame}
+              </td>
 
 
+              <td>
+                <button
+                  onClick={() => setEditingCriteria(criteria)}
+                >
+                  Edit
+                </button>
+              </td>
 
-                <td>
-                    <button onClick={() => handleDeleteCriteria(criteria.majorcriteriaid)}>
-                       Delete
-                    </button>
-                </td>
 
-                </tr>
-             ))}
+              <td>
+                <button
+                  onClick={() =>
+                    handleDeleteCriteria(
+                      criteria.majorcriteriaid
+                    )
+                  }
+                >
+                  Delete
+                </button>
+              </td>
+
+
+            </tr>
+
+          ))}
+
         </tbody>
-    </table>
+
+      </table>
 
     </>
   );
 };
 
-export default Criteria;    
+
+export default Criteria;

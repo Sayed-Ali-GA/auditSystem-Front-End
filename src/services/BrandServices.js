@@ -62,10 +62,34 @@ const remove = async (id) => {
 };
 
 
+
+  const update = async (id, brandData) => {
+    try {
+      const response = await fetch(`${BASE_URL}/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(brandData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update brand");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error updating brand:", error);
+      throw error;
+    }
+  };  
+
+
 export default {
   index,
   create,
   remove,
+  update,
   
 };
 

@@ -11,15 +11,14 @@ const Brands = () => {
 
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingBrand, setEditingBrand] = useState(null);
 
 
   useEffect(() => {
-
     const getBrands = async () => {
       try {
         const data = await brandService.index();
         setBrands(data);
-
       } catch (error) {
         console.log(error);
 
@@ -27,7 +26,6 @@ const Brands = () => {
         setLoading(false);
       }
     };
-
     getBrands();
 
   }, []);
@@ -35,21 +33,44 @@ const Brands = () => {
 
 
   const handleAddBrand = async (brandData) => {
+  try {
+    if (editingBrand) {
+      const updatedBrand = await brandService.update(
+        editingBrand.brandid,
+        brandData
+      );
 
-    try {
+      setBrands((prev) =>
+        prev.map((brand) =>
+          brand.brandid === editingBrand.brandid
+            ? updatedBrand
+            : brand
+        )
+      );
 
+      setEditingBrand(null);
+
+      Swal.fire({
+        icon: "success",
+        title: "Updated!",
+        text: "Brand updated successfully.",
+      });
+
+    } else {
       const newBrand = await brandService.create(brandData);
 
-      setBrands([
-        ...brands,
-        newBrand
-      ]);
+      setBrands((prev) => [...prev, newBrand]);
 
-    } catch(error) {
-      console.log(error);
+      Swal.fire({
+        icon: "success",
+        title: "Added!",
+        text: "Brand added successfully.",
+      });
     }
-
-  };
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 
 
@@ -97,14 +118,17 @@ const handleDeleteBrand = async (brandid) => {
   return (
     <>
 
-    <h2>Add New Brand</h2>
+    <h2>
+        {editingBrand ? "Edit Brand" : "Add New Brand"}
+    </h2>
+
       <BrandForm 
         handleAddBrand={handleAddBrand}
+        editingBrand={editingBrand}
       />
 
 
       <h1>Brands</h1>
-
 
       <table>
 
@@ -123,17 +147,15 @@ const handleDeleteBrand = async (brandid) => {
           {brands.map((brand, index) => (
 
             <tr key={brand.brandid}>
-
               <td>{index + 1}</td>
-
               <td>
                 {brand.brandname}
               </td>
 
               <td>
-                <Link to={`/brands/${brand.brandid}`}>
-                  Edit
-                </Link>
+                <button onClick={() => setEditingBrand(brand)}>
+                    Edit
+              </button>
               </td>
 
              

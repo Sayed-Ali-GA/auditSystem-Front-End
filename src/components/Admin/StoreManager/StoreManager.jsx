@@ -15,6 +15,7 @@ const StoreManagers = () => {
     const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [editingStoreManager, setEditingStoreManager] = useState(null);
 
     useEffect(() => {
         const getStoreManagers = async () => {
@@ -68,19 +69,61 @@ const StoreManagers = () => {
         );
     }
 
-    const handleAddStoreManager = async (storeManagerData) => {
-        try {
+const handleAddStoreManager = async (storeManagerData) => {
+    try {
+
+        if (editingStoreManager) {
+
+            const updatedStoreManager = await storeManagerService.update(
+                editingStoreManager.storemanagerid,
+                storeManagerData
+            );
+
+
+            setStoreManagers((prev) =>
+                prev.map((storeManager) =>
+                    storeManager.storemanagerid === editingStoreManager.storemanagerid
+                        ? updatedStoreManager
+                        : storeManager
+                )
+            );
+
+
+            setEditingStoreManager(null);
+
+
+            Swal.fire({
+                icon: "success",
+                title: "Updated!",
+                text: "Store Manager updated successfully."
+            });
+
+
+        } else {
+
+
             const newStoreManager = await storeManagerService.create(storeManagerData);
 
-            setStoreManagers([
-                ...storeManagers,
+
+            setStoreManagers((prev) => [
+                ...prev,
                 newStoreManager
             ]);
 
-        } catch (error) {
-            console.log(error);
+
+            Swal.fire({
+                icon: "success",
+                title: "Added!",
+                text: "Store Manager added successfully."
+            });
+
         }
-    };
+
+
+    } catch (error) {
+        console.log(error);
+    }
+};
 
     const handleDeleteStoreManager = async (storemanagerid) => {
         const result = await Swal.fire({
@@ -121,12 +164,19 @@ const StoreManagers = () => {
 
     return (
         <>
-            <h2>Add New Store Manager</h2>
+           <h2>
+                {editingStoreManager 
+                    ? "Edit Store Manager" 
+                    : "Add New Store Manager"
+                }
+            </h2>
+
 
             <StoreManagerForm
                 brands={brands}
                 locations={locations}
                 handleAddStoreManager={handleAddStoreManager}
+                editingStoreManager={editingStoreManager}
             />
 
             <h1>Store Managers</h1>
@@ -154,9 +204,9 @@ const StoreManagers = () => {
                             <td>{storeManager.locationname}</td>
 
                             <td>
-                                <Link to={`/StoreManagers/${storeManager.storemanagerid}`}>
+                               <button onClick={() => setEditingStoreManager(storeManager)}>
                                     Edit
-                                </Link>
+                                </button>
                             </td>
 
                             <td>

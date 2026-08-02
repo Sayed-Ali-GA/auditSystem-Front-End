@@ -69,10 +69,33 @@ const remove = async (id) => {
 };
 
 
+const update = async (id, opsManagerData) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(opsManagerData),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update Ops Manager");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating Ops Manager:", error);
+    throw error;
+  }
+};  
+
+
 export default {
   index,
   create,
   remove,
+  update,
   
 };
 

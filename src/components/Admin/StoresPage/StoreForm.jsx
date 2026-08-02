@@ -1,8 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Select from "react-select";
 
 
-const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManagers }) => {
+const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManagers, editingStore }) => {
+
+
+    useEffect(() => {
+
+    if(editingStore){
+
+        setStoreData({
+            StoreCode: editingStore.storecode,
+            BrandID: editingStore.brandid,
+            LocationID: editingStore.locationid,
+            OpsManagerID: editingStore.opsmanagerid,
+            StoreManagerID: editingStore.storemanagerid
+        });
+
+    } else {
+
+        setStoreData({
+            StoreCode: "",
+            BrandID: null,
+            LocationID: null,
+            OpsManagerID: null,
+            StoreManagerID: null
+        });
+
+    }
+
+},[editingStore]);
+
 
 
     const [storeData, setStoreData] = useState({
@@ -25,18 +53,23 @@ const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManage
 
 
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        await handleAddStore(storeData);
-        console.log(storeData);
-        setStoreData({
-            StoreCode: "",
-            BrandID: null,
-            LocationID: null,
-            OpsManagerID: null,
-            StoreManagerID: null
-        });
-    };
+        const handleSubmit = async (e) => {
+            e.preventDefault();
+
+            await handleAddStore(storeData);
+
+            if(!editingStore){
+
+                setStoreData({
+                    StoreCode: "",
+                    BrandID: null,
+                    LocationID: null,
+                    OpsManagerID: null,
+                    StoreManagerID: null
+                });
+
+            }
+        };
 
 
     const filteredStoreManagers = storeManagers.filter((storeManager) => {
@@ -188,7 +221,7 @@ const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManage
 
                 <p>
                     <button type="submit">
-                        Add Store
+                        {editingStore ? "Update Store" : "Add Store"}
                     </button>
                 </p>
             </form>

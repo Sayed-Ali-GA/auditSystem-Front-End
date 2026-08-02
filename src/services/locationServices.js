@@ -70,9 +70,33 @@ const remove = async (id) => {
 };
 
 
+
+const update = async (id, locationData) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(locationData),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to update Location");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating Location:", error);
+    throw error;
+  }
+};
+
+
 export default {
   index,
   create,
   remove,
+  update,
   
 };

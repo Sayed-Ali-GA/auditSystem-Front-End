@@ -3,7 +3,7 @@ import Select from "react-select";
 
 import criteriaService from "../../../services/CriteriaServices";
 
-const AuditPointForm = ({ handleAddAuditPoint, criteria }) => {
+const AuditPointForm = ({ handleAddAuditPoint, criteria, editingAuditPoint  }) => {
     const [criterias, setCriterias] = useState([]);
 
     const [auditPointData, setAuditPointData] = useState({
@@ -33,6 +33,32 @@ const AuditPointForm = ({ handleAddAuditPoint, criteria }) => {
             [e.target.name]: e.target.value,
         });
     };
+
+
+
+    useEffect(() => {
+    if (editingAuditPoint) {
+        setAuditPointData({
+            MajorCriteriaID: editingAuditPoint.majorcriteriaid,
+            auditComment: editingAuditPoint.auditcomment,
+            subPointCriteria: editingAuditPoint.subpointcriteria,
+            weightage: editingAuditPoint.weightage,
+            riskMatrix: editingAuditPoint.riskmatrix
+        });
+    } else {
+        setAuditPointData({
+            MajorCriteriaID: "",
+            auditComment: "",
+            subPointCriteria: "",
+            weightage: "",
+            riskMatrix: ""
+        });
+    }
+
+}, [editingAuditPoint]);
+
+
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -151,8 +177,9 @@ const AuditPointForm = ({ handleAddAuditPoint, criteria }) => {
 
             <br />
 
+
             <button type="submit">
-                Save Audit Point
+                {editingAuditPoint ? "Update Audit Point" : "Save Audit Point"}
             </button>
 
         </form>

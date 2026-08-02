@@ -1,70 +1,115 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 
-const OpsManagerForm = ({handleAddOpsManager}) => {
-    const [opsManagerData, setOpsManagerData]  = useState({
-        OracleID: '',
-        OpsManagerName: ''
+const OpsManagerForm = ({ handleAddOpsManager, editingOpsManager }) => {
+
+    const [opsManagerData, setOpsManagerData] = useState({
+        OracleID: "",
+        OpsManagerName: ""
     });
 
 
-    
-      const handleChange = (exc) => {
-    setOpsManagerData({
-      ...opsManagerData,
-      [exc.target.name]: exc.target.value
-    });
-  };
+
+    useEffect(() => {
+
+        if (editingOpsManager) {
+
+            setOpsManagerData({
+                OracleID: editingOpsManager.oracleid,
+                OpsManagerName: editingOpsManager.opsmanagername
+            });
+
+        } else {
+
+            setOpsManagerData({
+                OracleID: "",
+                OpsManagerName: ""
+            });
+
+        }
+
+    }, [editingOpsManager]);
 
 
-  const handleSubmit = async (exs) => {
-    exs.preventDefault();
 
-    await handleAddOpsManager(opsManagerData);
+    const handleChange = (e) => {
 
-    setOpsManagerData({
-        OracleID: '',
-        OpsManagerName: ''
-    });
-  };
+        setOpsManagerData({
+            ...opsManagerData,
+            [e.target.name]: e.target.value
+        });
 
-
-    return(
-        <>
-            <form onSubmit={handleSubmit}>
-                    <p>
-                        <label htmlFor="OpsManagerName">Enter Ops Manager Name:</label>
-                                <input 
-                                        type="text" 
-                                        name="OpsManagerName" 
-                                        placeholder="e.g. Sayed Ali" 
-                                        onChange={handleChange}
-                                        value={opsManagerData.OpsManagerName}
-                                        required
-                                />
-                    </p>
+    };
 
 
-                    <p>
-                        <label htmlFor="OracleID">Enter Oracle ID:</label>
-                                <input 
-                                    type="Number" 
-                                    name="OracleID"
-                                    placeholder="102553"
-                                    onChange={handleChange}
-                                    value={opsManagerData.OracleID}
-                                    required
-                                />
-                    </p>
 
-                    <button type="submit">
-                        Save Ops Manager
-                    </button>
-            </form>
-        </>
-    )
+    const handleSubmit = async (e) => {
+
+        e.preventDefault();
+
+        await handleAddOpsManager(opsManagerData);
 
 
-}
+        setOpsManagerData({
+            OracleID: "",
+            OpsManagerName: ""
+        });
+
+    };
+
+
+
+    return (
+
+        <form onSubmit={handleSubmit}>
+
+
+            <p>
+                <label>
+                    Enter Ops Manager Name:
+                </label>
+
+                <input
+                    type="text"
+                    name="OpsManagerName"
+                    placeholder="e.g. Sayed Ali"
+                    value={opsManagerData.OpsManagerName}
+                    onChange={handleChange}
+                    required
+                />
+
+            </p>
+
+
+
+            <p>
+                <label>
+                    Enter Oracle ID:
+                </label>
+
+                <input
+                    type="number"
+                    name="OracleID"
+                    placeholder="102553"
+                    value={opsManagerData.OracleID}
+                    onChange={handleChange}
+                    required
+                />
+
+            </p>
+
+
+
+            <button type="submit">
+                {editingOpsManager ? "Update Ops Manager" : "Save Ops Manager"}
+            </button>
+
+
+        </form>
+
+    );
+
+};
+
 
 export default OpsManagerForm;

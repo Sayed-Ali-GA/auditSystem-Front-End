@@ -10,6 +10,7 @@ const Location = () => {
 
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingLocation, setEditingLocation] = useState(null);
 
   useEffect(() => {
     const getLocations = async () => {
@@ -34,17 +35,59 @@ const Location = () => {
 
 
   const handleAddLocation = async (locationData) => {
-    try {
-        const newLocation = await locationService.create(locationData);
-          setLocations([
-           ...locations,
-            newLocation
-        ]);
+  try {
 
-    } catch (error) {
-        console.log(error)
+    if (editingLocation) {
+
+      const updatedLocation = await locationService.update(
+        editingLocation.locationid,
+        locationData
+      );
+
+
+      setLocations((prev) =>
+        prev.map((location) =>
+          location.locationid === editingLocation.locationid
+            ? updatedLocation
+            : location
+        )
+      );
+
+
+      setEditingLocation(null);
+
+
+      Swal.fire({
+        icon: "success",
+        title: "Updated!",
+        text: "Location updated successfully.",
+      });
+
+
+    } else {
+
+      const newLocation = await locationService.create(locationData);
+
+
+      setLocations((prev) => [
+        ...prev,
+        newLocation
+      ]);
+
+
+      Swal.fire({
+        icon: "success",
+        title: "Added!",
+        text: "Location added successfully.",
+      });
+
     }
+
+
+  } catch (error) {
+    console.log(error);
   }
+};
 
 
 
@@ -89,10 +132,15 @@ const Location = () => {
   return (
         <>
 
-        <h2>Add new Location</h2>
-          <LocationForm 
-            handleAddLocation={handleAddLocation}
+          <h2>
+            {editingLocation ? "Edit Location" : "Add New Location"}
+          </h2>
+
+          <LocationForm
+              handleAddLocation={handleAddLocation}
+              editingLocation={editingLocation}
           />
+
 
       <h1>Location</h1>
 
@@ -113,9 +161,9 @@ const Location = () => {
                     <td>{location.locationname}</td>
 
 
-                    <td> <Link to={`/location/${location.locationid}`}>Edit</Link> </td>
-
-
+                    <button onClick={() => setEditingLocation(location)}>
+                        Edit
+                    </button>
 
                   <td>
                     <button onClick={() => handleDeleteLocation(location.locationid)}>

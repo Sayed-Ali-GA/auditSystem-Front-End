@@ -21,6 +21,8 @@ const Stores = () => {
     const [opsManagers, setOpsManagers] = useState([]);
     const [storeManagers, setStoreManagers] = useState([]);
 
+    const [editingStore,setEditingStore] = useState(null);
+
 
     // Get Store Managers
 
@@ -138,30 +140,64 @@ const Stores = () => {
 
 
     // Add Store
-    const handleAddStore = async (storeData) => {
-        try {
-            const newStore = await storeServices.create(storeData);
-            setStores([
-                ...stores,
-                newStore
-            ]);
-        } catch (error) {
-            console.log(error);
-        }
-    };
+ const handleAddStore = async(storeData)=>{
+
+try{
+
+if(editingStore){
+
+const updatedStore = await storeServices.update(
+    editingStore.storeserial,
+    storeData
+);
+
+
+setStores(prev =>
+prev.map(store =>
+store.storeserial === editingStore.storeserial
+? updatedStore
+: store
+)
+);
+
+
+setEditingStore(null);
+
+
+}else{
+
+const newStore = await storeServices.create(storeData);
+
+setStores(prev=>[
+...prev,
+newStore
+]);
+
+}
+
+
+}catch(error){
+console.log(error)
+}
+
+}
 
 
 
 
     return (
         <>
-            <h2>Add New Store</h2>
+            <h2>
+                {editingStore ? "Edit Store" : "Add New Store"}
+            </h2>
+
             <StoreForm
                 brands={brands}
                 locations={locations}
                 opsManagers={opsManagers}
                 storeManagers={storeManagers}
                 handleAddStore={handleAddStore}
+                editingStore={editingStore}
             />
 
             <h1>Stores</h1>
@@ -207,9 +243,9 @@ const Stores = () => {
                             </td>
 
                             <td>
-                                <Link to={`/Stores/${store.storeserial}`}>
+                               <button onClick={()=>setEditingStore(store)}>
                                     Edit
-                                </Link>
+                                </button>
                             </td>
 
                 <td>

@@ -1,12 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
-
-const BrandForm = ({ handleAddBrand }) => {
+const BrandForm = ({ handleAddBrand, editingBrand }) => {
 
   const [brandData, setBrandData] = useState({
     BrandName: ""
   });
 
+  useEffect(() => {
+    if (editingBrand) {
+      setBrandData({
+        BrandName: editingBrand.brandname
+      });
+    } else {
+      setBrandData({
+        BrandName: ""
+      });
+    }
+  }, [editingBrand]);
 
   const handleChange = (e) => {
     setBrandData({
@@ -14,7 +24,6 @@ const BrandForm = ({ handleAddBrand }) => {
       [e.target.name]: e.target.value
     });
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,30 +35,28 @@ const BrandForm = ({ handleAddBrand }) => {
     });
   };
 
-
   return (
     <form onSubmit={handleSubmit}>
 
-        <p>
-            <label htmlFor="Brand">Enter Brand Name:</label>
-                  <input
-                        type="text"
-                        name="BrandName"
-                        value={brandData.BrandName}
-                        onChange={handleChange}
-                        required
-                        placeholder="e.g. R & B"
-                    />
-        </p>
+      <p>
+        <label htmlFor="BrandName">Enter Brand Name:</label>
 
+        <input
+          type="text"
+          name="BrandName"
+          value={brandData.BrandName}
+          onChange={handleChange}
+          required
+          placeholder="e.g. R & B"
+        />
+      </p>
 
       <button type="submit">
-        Save Brand
+        {editingBrand ? "Update Brand" : "Save Brand"}
       </button>
 
     </form>
   );
 };
-
 
 export default BrandForm;

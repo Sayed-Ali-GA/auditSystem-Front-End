@@ -12,6 +12,7 @@ const OpsManager = () => {
 
   const [opsManagers, setOpsManagers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingOpsManager, setEditingOpsManager] = useState(null);
 
   useEffect(() => {
     const getOpsManagers = async () => {
@@ -38,18 +39,59 @@ const OpsManager = () => {
 
 
 
-  const handleAddOpsManager = async (opsManagerData) => {
-    try {
-        const newOpsManager = await OpsManagerService.create(opsManagerData);
-          setOpsManagers([
-           ...opsManagers,
-            newOpsManager
-        ]);
+const handleAddOpsManager = async (opsManagerData) => {
+  try {
 
-    } catch (error) {
-        console.log(error)
+    if (editingOpsManager) {
+
+      const updatedOpsManager = await OpsManagerService.update(
+        editingOpsManager.opsmanagerid,
+        opsManagerData
+      );
+
+
+      setOpsManagers((prev) =>
+        prev.map((opsManager) =>
+          opsManager.opsmanagerid === editingOpsManager.opsmanagerid
+            ? updatedOpsManager
+            : opsManager
+        )
+      );
+
+
+      setEditingOpsManager(null);
+
+
+      Swal.fire({
+        icon: "success",
+        title: "Updated!",
+        text: "Ops Manager updated successfully.",
+      });
+
+
+    } else {
+
+      const newOpsManager = await OpsManagerService.create(opsManagerData);
+
+      setOpsManagers((prev) => [
+        ...prev,
+        newOpsManager
+      ]);
+
+
+      Swal.fire({
+        icon: "success",
+        title: "Added!",
+        text: "Ops Manager added successfully.",
+      });
+
     }
+
+
+  } catch (error) {
+    console.log(error);
   }
+};
   
 
   const handleDeleteOpsManager = async (opsmanagerid) => {
@@ -91,10 +133,15 @@ const OpsManager = () => {
   return (
     <>
 
-    <h2>Add New Ops Manager</h2>
-      <OpsManagerForm 
-        handleAddOpsManager={handleAddOpsManager}
-      />
+    <h2>
+      {editingOpsManager ? "Edit Ops Manager" : "Add New Ops Manager"}
+    </h2>
+
+
+    <OpsManagerForm
+      handleAddOpsManager={handleAddOpsManager}
+      editingOpsManager={editingOpsManager}
+    />
 
       <h1>Ops Managers</h1>
 
@@ -117,7 +164,9 @@ const OpsManager = () => {
                     <td>{opsManager.oracleid}</td>
 
 
-                    <td> <Link to={`/opsmanagers/${opsManager.opsmanagerid}`}>Edit</Link> </td>
+                   <button onClick={() => setEditingOpsManager(opsManager)}>
+                      Edit
+                  </button>
 
                   <td>
                     <button onClick={() => handleDeleteOpsManager(opsManager.opsmanagerid)}>

@@ -1,16 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Select from "react-select";
 
 
 
 
-const StoreManagerForm = ({brands, locations, handleAddStoreManager}) => {
+const StoreManagerForm = ({brands, locations, handleAddStoreManager, editingStoreManager}) => {
     const [storeManagerData, setStoreManagerData] = useState({
     OracleID: "",
     StoreManagerName: "",
     BrandID: "",
     LocationID: ""
 });
+
+
+
+    useEffect(() => {
+
+        if(editingStoreManager){
+
+            setStoreManagerData({
+                OracleID: editingStoreManager.oracleid,
+                StoreManagerName: editingStoreManager.storemanagername,
+                BrandID: editingStoreManager.brandid,
+                LocationID: editingStoreManager.locationid
+            });
+
+        } else {
+
+            setStoreManagerData({
+                OracleID:"",
+                StoreManagerName:"",
+                BrandID:"",
+                LocationID:""
+            });
+
+        }
+
+    },[editingStoreManager]);
 
 
     
@@ -122,8 +148,11 @@ const StoreManagerForm = ({brands, locations, handleAddStoreManager}) => {
 
 
                 <p>
-                    <button type="submit">
-                        Add Store Manager
+                   <button type="submit">
+                        {editingStoreManager 
+                            ? "Update Store Manager" 
+                            : "Add Store Manager"
+                        }
                     </button>
                 </p>
 
