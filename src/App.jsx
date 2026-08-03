@@ -20,6 +20,7 @@ import AuditDetails from './components/Employee/Audit/AuditDetails'
 import AuditForm from "./components/Employee/Audit/AuditForm";
 import AuditsList from "./components/Employee/Audit/Auditslist";
 import AuditView from "./components/Employee/Audit/Auditview";
+import NavBar from "./components/NavBar/NavBar";
 
 import "./App.css";
 
@@ -31,7 +32,11 @@ function AppShell() {
     return (
         <div className="app">
 
-            {isAuthenticated && <Sidebar />}
+        {isAuthenticated && <Sidebar />}
+
+        <div className="main-layout">
+
+            {isAuthenticated && <NavBar />}
 
             <main className="content">
 
@@ -150,6 +155,8 @@ function AppShell() {
 
             </main>
         </div>
+        </div>
+
     );
 }
 

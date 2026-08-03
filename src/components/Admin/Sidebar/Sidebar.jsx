@@ -12,10 +12,62 @@ const Sidebar = () => {
         navigate("/login", { replace: true });
     };
 
+
+    const menus = {
+        admin: [
+            { name: "Users", path: "/users" },
+            { name: "Brands", path: "/brands" },
+            { name: "Criteria", path: "/criteria" },
+            { name: "Location", path: "/location" },
+            { name: "Ops Managers", path: "/opsmanagers" },
+            { name: "Store Managers", path: "/storemanagers" },
+            { name: "Stores", path: "/stores" },
+            { name: "Audit Point", path: "/audit-points" },
+            { name: "Audits", path: "/Audits" },
+        ],
+
+        opsManager: [
+            { name: "Audit Point", path: "/audit-points" },
+            { name: "Audits", path: "/Audits" },
+        ],
+
+        auditor: [
+            { name: "Audit", path: "/audit" },
+            { name: "Past Audits", path: "/Audits" },
+        ]
+    };
+
+
+    const getMenu = () => {
+
+        switch(user?.RoleID) {
+
+            case 1:
+                return menus.admin;
+
+            case 2:
+                return menus.opsManager;
+
+            case 3:
+                return menus.auditor;
+
+            default:
+                return [];
+        }
+    };
+
+
     return (
         <aside className="sidebar">
 
+            <img 
+                src="/images/logo.png" 
+                alt="Logo" 
+                className="logo" 
+            />
+
             <h2>Audit System</h2>
+
 
             <nav>
 
@@ -24,86 +76,27 @@ const Sidebar = () => {
                 </NavLink>
 
 
-                {user?.RoleID === 1 && (
-                    <>
-                        <NavLink to="/users">
-                             Users
-                        </NavLink>
+                {getMenu().map((item) => (
+                    <NavLink 
+                        key={item.path}
+                        to={item.path}
+                    >
+                        {item.name}
+                    </NavLink>
+                ))}
 
-                        <NavLink to="/brands">
-                            Brands
-                        </NavLink>
-
-                        <NavLink to="/criteria">
-                            Criteria
-                        </NavLink>
-
-                        <NavLink to="/location">
-                            Location
-                        </NavLink>
-
-                        <NavLink to="/opsmanagers">
-                            Ops Managers
-                        </NavLink>
-
-                        <NavLink to="/storemanagers">
-                            Store Managers
-                        </NavLink>
-
-                        <NavLink to="/stores">
-                            Stores
-                        </NavLink>
-
-                        <NavLink to="/audit-points">
-                            Audit Point
-                        </NavLink>
-
-                        <NavLink to="/Audits">
-                            Audits
-                        </NavLink>
-                    </>
-                    
-                )}
-
-                 {user?.RoleID === 2 && (
-                    <>
-                        <NavLink to="/audit-points">
-                            Audit Point
-                        </NavLink>
-
-                        <NavLink to="/Audits">
-                            Audits
-                        </NavLink>
-                    </>
-                 )}
-
-
-
-                  {user?.RoleID === 3 && (
-                    <>
-                        <NavLink to="/audit">
-                            Audit
-                        </NavLink>
-
-                        <NavLink to="/Audits">
-                            Past Audits
-                        </NavLink>
-                    </>
-                 )}
-
-
-                
 
             </nav>
 
 
-            <button 
-                type="button" 
-                className="logout-button" 
+            <button
+                type="button"
+                className="logout-button"
                 onClick={handleLogout}
             >
                 Log out
             </button>
+
 
         </aside>
     );
