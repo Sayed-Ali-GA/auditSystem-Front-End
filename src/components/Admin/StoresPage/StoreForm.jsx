@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Select from "react-select";
+import { FiHash, FiTag, FiMapPin, FiUserCheck, FiUser, FiSave } from "react-icons/fi";
 
 
 const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManagers, editingStore }) => {
@@ -108,12 +109,13 @@ const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManage
 
 
 
-    
     return (
-        <>
-            <form onSubmit={handleSubmit}>
-                <p>
-                    <label>Enter Store Code:</label>
+        <form onSubmit={handleSubmit}>
+
+            <div className="ag-form-grid">
+
+                <div className="ag-field">
+                    <label><FiHash /> Store code</label>
                         <input
                             type="text"
                             name="StoreCode"
@@ -122,14 +124,16 @@ const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManage
                             value={storeData.StoreCode}
                             required
                         />
-                </p>
+                </div>
 
 
-                <div>
-                    <label>Select Brand:</label>
+                <div className="ag-field">
+                    <label><FiTag /> Brand</label>
                     <Select
+                        classNamePrefix="ag-rs"
+                        className="ag-select"
                         options={brandOptions}
-                        placeholder="Search Brand..."
+                        placeholder="Search brand..."
                         value={
                             brandOptions.find(
                                 (option) =>
@@ -147,11 +151,13 @@ const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManage
                     />
                 </div>
 
-                <div>
-                    <label>Select Location:</label>
+                <div className="ag-field">
+                    <label><FiMapPin /> Location</label>
                     <Select
+                        classNamePrefix="ag-rs"
+                        className="ag-select"
                         options={locationOptions}
-                        placeholder="Search Location..."
+                        placeholder="Search location..."
                         value={
                             locationOptions.find(
                                 (option) =>
@@ -172,11 +178,13 @@ const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManage
                 </div>
 
 
-                <div>
-                    <label>Select Ops Manager:</label>
+                <div className="ag-field">
+                    <label><FiUserCheck /> Ops manager</label>
                     <Select
+                        classNamePrefix="ag-rs"
+                        className="ag-select"
                         options={opsManagerOptions}
-                        placeholder="Search Ops Managers..."
+                        placeholder="Search ops managers..."
                         value={
                             opsManagerOptions.find(
                                 (option) =>
@@ -196,11 +204,13 @@ const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManage
                 </div>
 
 
-                <div>
-                    <label>Select Store Manager:</label>
+                <div className="ag-field">
+                    <label><FiUser /> Store manager</label>
                     <Select
+                        classNamePrefix="ag-rs"
+                        className="ag-select"
                         options={storeManagerOptions}
-                        placeholder="Search Store Managers..."
+                        placeholder="Search store managers..."
                         value={
                             storeManagerOptions.find(
                                 (option) =>
@@ -219,13 +229,15 @@ const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManage
                     />
                 </div>
 
-                <p>
-                    <button type="submit">
-                        {editingStore ? "Update Store" : "Add Store"}
-                    </button>
-                </p>
-            </form>
-        </>
+            </div>
+
+            <div className="ag-form-actions">
+                <button type="submit" className="ag-btn ag-btn-primary">
+                    <FiSave />
+                    {editingStore ? "Update store" : "Add store"}
+                </button>
+            </div>
+        </form>
     );
 };
 

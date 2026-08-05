@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Select from "react-select";
+import { FiCheckSquare, FiList, FiMessageSquare, FiPercent, FiAlertTriangle, FiSave } from "react-icons/fi";
 
 import criteriaService from "../../../services/CriteriaServices";
 
@@ -88,99 +89,98 @@ const AuditPointForm = ({ handleAddAuditPoint, criteria, editingAuditPoint  }) =
     return (
         <form onSubmit={handleSubmit}>
 
-            <div>
-                <label>Major Criteria</label>
+            <div className="ag-form-grid">
 
-                <Select
-                    options={criteriaOptions}
-                    placeholder="Select Major Criteria"
-                    value={
-                        criteriaOptions.find(
-                        (option) => option.value === auditPointData.MajorCriteriaID) || null
-                    }
-                    onChange={(selectedOption) =>
-                        setAuditPointData({
-                            ...auditPointData,
-                            MajorCriteriaID: selectedOption.value,
-                        })
-                    }
-                />
+                <div className="ag-field">
+                    <label><FiCheckSquare /> Major criteria</label>
+
+                    <Select
+                        classNamePrefix="ag-rs"
+                        className="ag-select"
+                        options={criteriaOptions}
+                        placeholder="Select major criteria"
+                        value={
+                            criteriaOptions.find(
+                            (option) => option.value === auditPointData.MajorCriteriaID) || null
+                        }
+                        onChange={(selectedOption) =>
+                            setAuditPointData({
+                                ...auditPointData,
+                                MajorCriteriaID: selectedOption.value,
+                            })
+                        }
+                    />
+                </div>
+
+                <div className="ag-field">
+                    <label><FiList /> Sub point criteria</label>
+
+                    <input
+                        type="text"
+                        name="subPointCriteria"
+                        value={auditPointData.subPointCriteria}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
+
+                <div className="ag-field ag-field-wide">
+                    <label><FiMessageSquare /> Audit comment</label>
+
+                    <textarea
+                        name="auditComment"
+                        value={auditPointData.auditComment}
+                        onChange={handleChange}
+                        placeholder="Write..."
+                        rows='5'
+                        required
+                    />
+                </div>
+
+                <div className="ag-field">
+                    <label><FiPercent /> Weightage</label>
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="weightage"
+                        value={auditPointData.weightage}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
+
+                <div className="ag-field">
+                    <label><FiAlertTriangle /> Risk matrix</label>
+
+                    <Select
+                        classNamePrefix="ag-rs"
+                        className="ag-select"
+                        options={riskOptions}
+                        placeholder="Select risk level"
+                        value={
+                            riskOptions.find(
+                                (option) =>
+                                    option.value === auditPointData.riskMatrix
+                            ) || null
+                        }
+                        onChange={(selectedOption) =>
+                            setAuditPointData({
+                                ...auditPointData,
+                                riskMatrix: selectedOption.value,
+                            })
+                        }
+                    />
+                </div>
+
             </div>
 
-            <br />
-
-            <div>
-                <label>Sub Point Criteria</label>
-
-                <input
-                    type="text"
-                    name="subPointCriteria"
-                    value={auditPointData.subPointCriteria}
-                    onChange={handleChange}
-                    required
-                />
+            <div className="ag-form-actions">
+                <button type="submit" className="ag-btn ag-btn-primary">
+                    <FiSave />
+                    {editingAuditPoint ? "Update audit point" : "Save audit point"}
+                </button>
             </div>
-
-            <br />
-
-            <p>
-                <label>Audit Comment:</label>
-
-                <textarea
-                    name="auditComment"
-                    value={auditPointData.auditComment}
-                    onChange={handleChange}
-                    placeholder="Write..."
-                    rows='6'
-                    cols='25'
-                    required
-                />
-            </p>
-
-            <br />
-
-            <div>
-                <label>Weightage</label>
-
-                <input
-                    type="number"
-                    step="0.01"
-                    name="weightage"
-                    value={auditPointData.weightage}
-                    onChange={handleChange}
-                    required
-                />
-            </div>
-
-            <br />
-
-            <div>
-                <label>Risk Matrix</label>
-
-                <Select
-                    options={riskOptions}
-                    placeholder="Select Risk Level"
-                    value={
-                        riskOptions.find(
-                            (option) =>
-                                option.value === auditPointData.riskMatrix
-                        ) || null
-                    }
-                    onChange={(selectedOption) =>
-                        setAuditPointData({
-                            ...auditPointData,
-                            riskMatrix: selectedOption.value,
-                        })
-                    }
-                />
-            </div>
-
-            <br />
-
-
-            <button type="submit">
-                {editingAuditPoint ? "Update Audit Point" : "Save Audit Point"}
-            </button>
 
         </form>
     );

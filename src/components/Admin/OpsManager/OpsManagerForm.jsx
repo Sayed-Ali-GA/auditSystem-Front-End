@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { FiUserCheck, FiHash, FiSave } from "react-icons/fi";
 
 
 const OpsManagerForm = ({ handleAddOpsManager, editingOpsManager }) => {
@@ -63,47 +64,42 @@ const OpsManagerForm = ({ handleAddOpsManager, editingOpsManager }) => {
 
         <form onSubmit={handleSubmit}>
 
+            <div className="ag-form-grid">
 
-            <p>
-                <label>
-                    Enter Ops Manager Name:
-                </label>
+                <div className="ag-field">
+                    <label><FiUserCheck /> Ops manager name</label>
 
-                <input
-                    type="text"
-                    name="OpsManagerName"
-                    placeholder="e.g. Sayed Ali"
-                    value={opsManagerData.OpsManagerName}
-                    onChange={handleChange}
-                    required
-                />
+                    <input
+                        type="text"
+                        name="OpsManagerName"
+                        placeholder="e.g. Sayed Ali"
+                        value={opsManagerData.OpsManagerName}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
 
-            </p>
+                <div className="ag-field">
+                    <label><FiHash /> Oracle ID</label>
 
+                    <input
+                        type="number"
+                        name="OracleID"
+                        placeholder="102553"
+                        value={opsManagerData.OracleID}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
 
+            </div>
 
-            <p>
-                <label>
-                    Enter Oracle ID:
-                </label>
-
-                <input
-                    type="number"
-                    name="OracleID"
-                    placeholder="102553"
-                    value={opsManagerData.OracleID}
-                    onChange={handleChange}
-                    required
-                />
-
-            </p>
-
-
-
-            <button type="submit">
-                {editingOpsManager ? "Update Ops Manager" : "Save Ops Manager"}
-            </button>
-
+            <div className="ag-form-actions">
+                <button type="submit" className="ag-btn ag-btn-primary">
+                    <FiSave />
+                    {editingOpsManager ? "Update ops manager" : "Save ops manager"}
+                </button>
+            </div>
 
         </form>
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Select from "react-select";
+import { FiUser, FiHash, FiTag, FiMapPin, FiSave } from "react-icons/fi";
 
 
 
@@ -39,7 +40,7 @@ const StoreManagerForm = ({brands, locations, handleAddStoreManager, editingStor
     },[editingStoreManager]);
 
 
-    
+
     const handleChange = (exc) => {
         setStoreManagerData({
       ...storeManagerData,
@@ -52,7 +53,6 @@ const StoreManagerForm = ({brands, locations, handleAddStoreManager, editingStor
     exs.preventDefault();
 
     await handleAddStoreManager(storeManagerData);
-     console.log(storeManagerData);
 
     setStoreManagerData({
     OracleID: "",
@@ -63,7 +63,7 @@ const StoreManagerForm = ({brands, locations, handleAddStoreManager, editingStor
   };
 
 
-  
+
     const brandOptions = brands.map((brand) => ({
         value: brand.brandid,
         label: brand.brandname,
@@ -78,86 +78,87 @@ const StoreManagerForm = ({brands, locations, handleAddStoreManager, editingStor
 
 
     return(
-        <>
-            <form onSubmit={handleSubmit}>
-                    <p>
-                        <label htmlFor="StoreManagerName">Enter Ops Manager Name:</label>
-                                <input 
-                                        type="text" 
-                                        name="StoreManagerName" 
-                                        placeholder="e.g. Sayed Ali" 
-                                        onChange={handleChange}
-                                        value={storeManagerData.StoreManagerName}
-                                        required
-                                />
-                    </p>
+        <form onSubmit={handleSubmit}>
 
+            <div className="ag-form-grid">
 
-                    <p>
-                        <label htmlFor="oracleid">Enter Oracle ID:</label>
-                                <input 
-                                    type="Number" 
-                                    name="OracleID"
-                                    placeholder="102553"
-                                    onChange={handleChange}
-                                    value={storeManagerData.OracleID}
-                                    required
-                                />
-                    </p>
+                <div className="ag-field">
+                    <label htmlFor="StoreManagerName"><FiUser /> Store manager name</label>
+                    <input
+                        type="text"
+                        name="StoreManagerName"
+                        placeholder="e.g. Sayed Ali"
+                        onChange={handleChange}
+                        value={storeManagerData.StoreManagerName}
+                        required
+                    />
+                </div>
 
+                <div className="ag-field">
+                    <label htmlFor="oracleid"><FiHash /> Oracle ID</label>
+                    <input
+                        type="number"
+                        name="OracleID"
+                        placeholder="102553"
+                        onChange={handleChange}
+                        value={storeManagerData.OracleID}
+                        required
+                    />
+                </div>
 
+                <div className="ag-field">
+                    <label htmlFor="BrandID"><FiTag /> Brand</label>
+                    <Select
+                        classNamePrefix="ag-rs"
+                        className="ag-select"
+                        options={brandOptions}
+                        placeholder="Search brand..."
+                        value={brandOptions.find(
+                            (option) => option.value === storeManagerData.BrandID
+                        ) || null}
+                        onChange={(selectedOption) =>
+                            setStoreManagerData({
+                            ...storeManagerData,
+                            BrandID: selectedOption ? selectedOption.value : ''
+                        })
+                    }
+                        isSearchable
+                    />
+                </div>
 
-                    <div>
-                        <label htmlFor="BrandID">Select Brand:</label>
-                           <Select
-                                options={brandOptions}
-                                placeholder="Search Brand..."
-                                value={brandOptions.find(
-                                    (option) => option.value === storeManagerData.BrandID
-                                )}
-                                onChange={(selectedOption) =>
-                                    setStoreManagerData({
-                                    ...storeManagerData,
-                                    BrandID: selectedOption ? selectedOption.value : ''
-                                })
-                            }
-                                isSearchable
-                            />
-                    </div>
+                <div className="ag-field">
+                    <label htmlFor="LocationID"><FiMapPin /> Location</label>
+                    <Select
+                        classNamePrefix="ag-rs"
+                        className="ag-select"
+                        options={locationOptions}
+                        placeholder="Search location..."
+                        value={locationOptions.find(
+                            (option) => option.value === storeManagerData.LocationID
+                        ) || null}
+                        onChange={(selectedOption) =>
+                            setStoreManagerData({
+                            ...storeManagerData,
+                            LocationID: selectedOption ? selectedOption.value : ''
+                         })
+                    }
+                        isSearchable
+                    />
+                </div>
 
+            </div>
 
+            <div className="ag-form-actions">
+               <button type="submit" className="ag-btn ag-btn-primary">
+                    <FiSave />
+                    {editingStoreManager
+                        ? "Update store manager"
+                        : "Add store manager"
+                    }
+                </button>
+            </div>
 
-                    <div>
-                        <label htmlFor="LocationID">Select Location:</label>
-                           <Select
-                                options={locationOptions}
-                                placeholder="Search Location..."
-                                value={locationOptions.find(
-                                    (option) => option.value === storeManagerData.LocationID
-                                )}
-                                onChange={(selectedOption) =>
-                                    setStoreManagerData({
-                                    ...storeManagerData,
-                                    LocationID: selectedOption ? selectedOption.value : ''
-                                 })
-                            }
-                                isSearchable
-                            />
-                    </div>
-
-
-
-                <p>
-                   <button type="submit">
-                        {editingStoreManager 
-                            ? "Update Store Manager" 
-                            : "Add Store Manager"
-                        }
-                    </button>
-                </p>
-
-            </form>
-        </>
+        </form>
     )
 
 

@@ -1,12 +1,13 @@
 .navbar{
     height:70px;
-    background:#fff;
-    border-radius:12px;
+    background: var(--ag-white);
+    border-radius: var(--radius-md);
     padding:0 25px;
     display:flex;
     justify-content:space-between;
     align-items:center;
-    box-shadow:0 2px 8px rgba(0,0,0,.08);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--ag-gray-200);
 }
 
 .navbar-left{
@@ -19,16 +20,19 @@
     width:48px;
     height:48px;
     object-fit:contain;
+    border-radius: 8px;
 }
 
 .navbar-left h2{
     margin:0;
-    font-size:22px;
+    font-size:20px;
+    font-family: var(--font-display);
+    color: var(--ag-black);
 }
 
 .navbar-left p{
     margin:2px 0 0;
-    color:#6b7280;
+    color: var(--ag-gray-500);
     font-size:13px;
 }
 
@@ -48,25 +52,41 @@
     width:42px;
     height:42px;
     border-radius:50%;
-    background:#1f2937;
-    color:#fff;
+    background: linear-gradient(135deg, var(--ag-gold-light), var(--ag-gold) 70%, var(--ag-gold-dark));
+    color: var(--ag-white);
     display:flex;
     justify-content:center;
     align-items:center;
     font-weight:700;
+    font-family: var(--font-display);
+}
+
+.user-info strong {
+    color: var(--ag-black);
+    font-size: 14px;
 }
 
 .user-info p{
     margin:2px 0 0;
-    color:#6b7280;
+    color: var(--ag-gray-500);
     font-size:13px;
 }
 
-.logout-button{
-    background:#dc2626;
-    color:#fff;
-    border:none;
-    padding:10px 18px;
-    border-radius:8px;
-    cursor:pointer;
+.logout-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #ff2d2dea;
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background 0.15s ease;
+}
+
+.logout-button:hover {
+    background-color: #fd0000;
 }

@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
+import { FiLogOut } from "react-icons/fi";
 import { useAuth } from "../../components/Authcontext/Authcontext";
 import "./NavBar.css";
 
@@ -79,7 +80,8 @@ const NavBar = () => {
                     className="logout-button"
                     onClick={handleLogout}
                 >
-                    Log out
+                    <FiLogOut />
+                    <span>Log out</span>
                 </button>
 
             </div>

@@ -1,56 +1,54 @@
-.home-page {
-    padding: 30px;
+.ag-home-hero {
+  background: linear-gradient(135deg, var(--ag-black), var(--ag-charcoal) 65%);
+  border-radius: var(--radius-lg);
+  padding: clamp(22px, 4vw, 40px);
+  color: #fff;
+  margin-bottom: 28px;
+  position: relative;
+  overflow: hidden;
 }
 
-.home-page h1 {
-    font-size: 32px;
-    margin-bottom: 10px;
+.ag-home-hero::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: -60px;
+  top: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,148,115,0.35), transparent 70%);
 }
 
-.home-page p {
-    color: #6b7280;
-    margin-bottom: 30px;
+.ag-home-hero h1 {
+  color: #fff;
+  font-size: clamp(22px, 3vw, 30px);
+  margin-bottom: 8px;
 }
 
-.dashboard-cards {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
+.ag-home-hero p {
+  color: #d8d1c6;
+  margin: 0 0 14px;
+  max-width: 560px;
+  font-size: 14px;
 }
 
-.card {
-    background: white;
-    width: 200px;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    text-align: center;
-    transition: 0.3s;
+.ag-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  background: linear-gradient(135deg, var(--ag-gold-light), var(--ag-gold));
+  color: #fff;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
 }
 
-.card:hover {
-    transform: translateY(-5px);
-}
-
-.card h3 {
-    color: #374151;
-    font-size: 18px;
-    margin-bottom: 15px;
-}
-
-.card h2 {
-    font-size: 32px;
-    color: #111827;
-    margin: 0;
-}
-
-.role-badge{
-    display:inline-block;
-    margin-top:10px;
-    padding:6px 14px;
-    background:#1f2937;
-    color:#fff;
-    border-radius:20px;
-    font-size:14px;
-    font-weight:600;
+.ag-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ag-gray-700);
+  margin: 4px 0 14px;
 }

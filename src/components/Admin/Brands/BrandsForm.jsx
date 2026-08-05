@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { FiTag, FiSave } from "react-icons/fi";
 
 const BrandForm = ({ handleAddBrand, editingBrand }) => {
 
@@ -38,22 +39,27 @@ const BrandForm = ({ handleAddBrand, editingBrand }) => {
   return (
     <form onSubmit={handleSubmit}>
 
-      <p>
-        <label htmlFor="BrandName">Enter Brand Name:</label>
+      <div className="ag-form-grid">
+        <div className="ag-field">
+          <label htmlFor="BrandName"><FiTag /> Brand name</label>
+          <input
+            type="text"
+            id="BrandName"
+            name="BrandName"
+            value={brandData.BrandName}
+            onChange={handleChange}
+            required
+            placeholder="e.g. R & B"
+          />
+        </div>
+      </div>
 
-        <input
-          type="text"
-          name="BrandName"
-          value={brandData.BrandName}
-          onChange={handleChange}
-          required
-          placeholder="e.g. R & B"
-        />
-      </p>
-
-      <button type="submit">
-        {editingBrand ? "Update Brand" : "Save Brand"}
-      </button>
+      <div className="ag-form-actions">
+        <button type="submit" className="ag-btn ag-btn-primary">
+          <FiSave />
+          {editingBrand ? "Update brand" : "Save brand"}
+        </button>
+      </div>
 
     </form>
   );

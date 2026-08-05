@@ -1,254 +1,433 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Swal from "sweetalert2";
+
+import {
+  FiUsers,
+  FiEdit2,
+  FiSlash,
+  FiUnlock,
+  FiTrash2,
+  FiSearch,
+  FiPlus,
+} from "react-icons/fi";
+
 import Select from "react-select";
+
 import userService from "../../../services/UserServices";
 import locationServices from "../../../services/locationServices";
-import UserForm from "./UserForm"; 
+
+import UserForm from "./UserForm";
+
+import PageHeader from "../Shared/PageHeader";
+import LoadingState from "../Shared/LoadingState";
+import Modal from "../Shared/Modal";
+
+import "../Shared/theme.css";
+import "./Users.css";
+
+const roleNames = {
+  1: "Admin",
+  2: "Ops Manager",
+  3: "Auditor",
+};
 
 const Users = () => {
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
-    
-    const [locations, setLocations] = useState([]);
-    const [editingUser, setEditingUser] = useState(null);
+  const [users, setUsers] = useState([]);
 
-    const [selectedUser, setSelectedUser] = useState(null);
+  const [locations, setLocations] = useState([]);
 
-    const fetchUsers = useCallback(async () => {
-        setLoading(true);
-        setError("");
-        try {
-            const data = await userService.index();
-            setUsers(data);
-        } catch (err) {
-            setError(err.message || "Failed to load users.");
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchUsers();
-    }, [fetchUsers]);
+  const [error, setError] = useState("");
 
+  const [editingUser, setEditingUser] = useState(null);
 
-       useEffect(() => {
-            const getLocations = async () => {
-                try {
-                    const data = await locationServices.index();
-                    setLocations(data);
-                } catch (error) {
-                    console.log(error);
-                }
-            };
-            getLocations();
-        }, []);
+  const [selectedUser, setSelectedUser] = useState(null);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const handleDisable = async (user) => {
-        const result = await Swal.fire({
-            icon: "warning",
-            title: `Disable ${user.username}?`,
-            text: "User will not be able to login",
-            showCancelButton: true,
-            confirmButtonText: "Disable",
-            confirmButtonColor: "#d33"
-        });
+  const fetchUsers = useCallback(async () => {
+    try {
+      const data = await userService.index();
 
-        if (!result.isConfirmed) return;
+      setUsers(data);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-        try {
-            await userService.disable(user.userid);
-            await fetchUsers();
-            Swal.fire({
-                icon: "success",
-                title: "User Disabled",
-                timer: 1500,
-                showConfirmButton: false
-            });
-        } catch (error) {
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: error.message
-            });
-        }
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  useEffect(() => {
+    const getLocations = async () => {
+      try {
+        const data = await locationServices.index();
+
+        setLocations(data);
+      } catch (error) {
+        console.log(error);
+      }
     };
 
-    const handleDelete = async (user) => {
-        const result = await Swal.fire({
-            icon: "warning",
-            title: `Delete ${user.username}?`,
-            text: "This cannot be undone",
-            showCancelButton: true,
-            confirmButtonText: "Delete",
-            confirmButtonColor: "#d33"
+    getLocations();
+  }, []);
+
+  const openAddModal = () => {
+    setEditingUser(null);
+
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (user) => {
+    setEditingUser(user);
+
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+
+    setEditingUser(null);
+  };
+
+  const handleAddUser = async (userData) => {
+    try {
+      if (editingUser) {
+        const updatedUser = await userService.update(
+          editingUser.userid,
+
+          {
+            UserName: userData.UserName,
+            LocationID: userData.LocationID,
+            RoleID: userData.RoleID,
+
+            ...(userData.Password && {
+              Password: userData.Password,
+            }),
+          },
+        );
+
+        setUsers((prev) =>
+          prev.map((user) =>
+            user.userid === editingUser.userid ? updatedUser : user,
+          ),
+        );
+
+        Swal.fire({
+          icon: "success",
+
+          title: "Updated!",
+
+          text: "User updated successfully.",
         });
+      } else {
+        const newUser = await userService.create(userData);
 
-        if (!result.isConfirmed) return;
+        setUsers((prev) => [...prev, newUser]);
 
-        try {
-            await userService.remove(user.userid);
-            await fetchUsers();
-            Swal.fire({
-                icon: "success",
-                title: "User Deleted",
-                timer: 1500,
-                showConfirmButton: false
-            });
-        } catch (error) {
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: error.message
-            });
-        }
-    };
+        Swal.fire({
+          icon: "success",
 
+          title: "Added!",
 
+          text: "User created successfully.",
+        });
+      }
 
-    const handleEnable = async (user) => {
+      closeModal();
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+
+        title: "Error!",
+
+        text: error.message,
+      });
+    }
+  };
+
+  const handleDisable = async (user) => {
     const result = await Swal.fire({
-        icon: "question",
-        title: `Enable ${user.username}?`,
-        text: "User will be able to login again",
-        showCancelButton: true,
-        confirmButtonText: "Enable",
-        confirmButtonColor: "#28a745"
+      icon: "warning",
+
+      title: `Disable ${user.username}?`,
+
+      text: "User will not be able to login",
+
+      showCancelButton: true,
+
+      confirmButtonText: "Disable",
     });
 
     if (!result.isConfirmed) return;
+
     try {
-        await userService.enable(user.userid);
-        await fetchUsers();
+      await userService.disable(user.userid);
 
-        Swal.fire({
-            icon: "success",
-            title: "User Enabled",
-            timer: 1500,
-            showConfirmButton: false
-        });
+      await fetchUsers();
+
+      Swal.fire({
+        icon: "success",
+
+        title: "User disabled",
+
+        timer: 1500,
+
+        showConfirmButton: false,
+      });
     } catch (error) {
-        Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: error.message
-        });
+      Swal.fire({
+        icon: "error",
+
+        title: "Error",
+
+        text: error.message,
+      });
     }
-};
+  };
 
+  const handleEnable = async (user) => {
+    const result = await Swal.fire({
+      icon: "question",
 
-    const userOptions = users.map(user => ({
-        value: user.userid,
-        label: `${user.username} - ${user.oracleid}`,
-        user
-    }));
+      title: `Enable ${user.username}?`,
 
+      showCancelButton: true,
 
+      confirmButtonText: "Enable",
+    });
 
+    if (!result.isConfirmed) return;
+
+    try {
+      await userService.enable(user.userid);
+
+      await fetchUsers();
+
+      Swal.fire({
+        icon: "success",
+
+        title: "User enabled",
+
+        timer: 1500,
+
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+
+        title: "Error",
+
+        text: error.message,
+      });
+    }
+  };
+
+  const handleDelete = async (user) => {
+    const result = await Swal.fire({
+      icon: "warning",
+
+      title: `Delete ${user.username}?`,
+
+      text: "This cannot be undone",
+
+      showCancelButton: true,
+
+      confirmButtonText: "Delete",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await userService.remove(user.userid);
+
+      setUsers((prev) => prev.filter((item) => item.userid !== user.userid));
+
+      Swal.fire({
+        icon: "success",
+
+        title: "Deleted",
+
+        timer: 1500,
+
+        showConfirmButton: false,
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+
+        title: "Error",
+
+        text: error.message,
+      });
+    }
+  };
+
+  const userOptions = users.map((user) => ({
+    value: user.userid,
+
+    label: `${user.username} - ${user.oracleid}`,
+
+    user,
+  }));
+
+  if (loading) {
     return (
-        <div style={{ padding: "20px" }}>
-            <UserForm 
-                editingUser={editingUser} 
-                locations={locations}
-                onCancelEdit={() => setEditingUser(null)} 
-                onSuccess={() => {
-                    setEditingUser(null);
-                    fetchUsers();
-                }} 
-            />
-
-            <hr style={{ margin: "30px 0" }} />
-
-            <label htmlFor="Search"> Search: 
-                <Select
-                    options={userOptions}
-                    placeholder="Search by Oracle ID or Name..."
-                    isClearable
-                    onChange={(option) => {
-                        setSelectedUser(option);
-                    }}
-                />
-            </label>
-            <h2>All Users</h2>
-
-            {loading && <p>Loading users...</p>}
-            {error && <p style={{ color: "red" }}>{error}</p>}
-
-            {/* Users Table */}
-            {!loading && !error && (
-                <table border="1" cellPadding="8" style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                        <tr>
-                            <th>Oracle ID</th>
-                            <th>Username</th>
-                            <th>Location</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                       {(selectedUser ? [selectedUser.user] : users).map(user => (
-                            <tr key={user.userid}>
-                                <td>{user.oracleid}</td>
-                                <td>{user.username}</td>
-                                <td>{user.locationname}</td>
-                                <td>
-                                    {
-                                        {
-                                            1: "Admin",
-                                            2: "Ops Manager",
-                                            3: "Auditor"
-                                        }[user.roleid] || "-"
-                                    }
-                                </td>
-                                <td>
-                                    <span>
-                                        {user.isactive ? "Active" : "Disabled"}
-                                    </span>
-                                </td>
-                                <td>
-
-                                    <button
-                                        onClick={() => setEditingUser(user)}
-                                        style={{ marginRight: "5px" }}
-                                    >
-                                        Edit
-                                    </button>
-
-
-                                    {user.isactive ? (
-                                        <button
-                                            onClick={() => handleDisable(user)}
-                                            style={{ marginRight: "5px" }}
-                                        >
-                                            Disable
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={() => handleEnable(user)}
-                                            style={{ marginRight: "5px" }}
-                                        >
-                                            Enable
-                                        </button>
-                                    )}
-
-
-                                    <button
-                                        onClick={() => handleDelete(user)}
-                                    >
-                                        Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
-        </div>
+      <div className="ag-main">
+        <LoadingState label="Loading users..." />
+      </div>
     );
+  }
+
+  return (
+    <div className="ag-main">
+      <PageHeader
+        icon={<FiUsers />}
+        eyebrow="Access"
+        title="Users"
+        subtitle="Create system accounts and manage their access."
+      />
+
+      <div className="ag-card">
+        <div className="ag-card-title-row">
+          <div className="ag-card-title">
+            <FiUsers />
+            All users
+          </div>
+
+          <button
+            className="ag-btn ag-btn-primary ag-btn-sm"
+            onClick={openAddModal}
+          >
+            <FiPlus />
+            Add user
+          </button>
+        </div>
+
+        <div
+          className="ag-field"
+          style={{
+            maxWidth: 360,
+            marginBottom: 18,
+          }}
+        >
+          <label>
+            <FiSearch />
+            Search
+          </label>
+
+          <Select
+            classNamePrefix="ag-rs"
+            options={userOptions}
+            placeholder="Search user..."
+            isClearable
+            onChange={(option) => setSelectedUser(option)}
+          />
+        </div>
+
+        <div className="ag-table-wrap">
+          <table className="ag-table">
+            <thead>
+              <tr>
+                <th>Oracle ID</th>
+
+                <th>Username</th>
+
+                <th>Location</th>
+
+                <th>Role</th>
+
+                <th>Status</th>
+
+                <th>Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {(selectedUser ? [selectedUser.user] : users).map((user) => (
+                <tr key={user.userid}>
+                  <td>{user.oracleid}</td>
+
+                  <td>{user.username}</td>
+
+                  <td>{user.locationname}</td>
+
+                  <td>{roleNames[user.roleid]}</td>
+
+                  <td>
+                    <span
+                      className={`ag-badge ${
+                        user.isactive ? "ag-badge-success" : "ag-badge-muted"
+                      }`}
+                    >
+                      {user.isactive ? "Active" : "Disabled"}
+                    </span>
+                  </td>
+
+                  <td>
+                    <div className="ag-row-actions">
+                      <button
+                        className="ag-icon-btn edit"
+                        title="Edit"
+                        onClick={() => openEditModal(user)}
+                      >
+                        <FiEdit2 />
+                      </button>
+
+                      {user.isactive ? (
+                        <button
+                          className="ag-icon-btn disable"
+                          title="Disable"
+                          onClick={() => handleDisable(user)}
+                        >
+                          <FiSlash />
+                        </button>
+                      ) : (
+                        <button
+                          className="ag-icon-btn enable"
+                          title="Enable"
+                          onClick={() => handleEnable(user)}
+                        >
+                          <FiUnlock />
+                        </button>
+                      )}
+
+                      <button
+                        className="ag-icon-btn delete"
+                        title="Delete"
+                        onClick={() => handleDelete(user)}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        icon={<FiUsers />}
+        title={editingUser ? "Edit user" : "Add new user"}
+      >
+        <UserForm
+          editingUser={editingUser}
+          locations={locations}
+          handleAddUser={handleAddUser}
+          onCancelEdit={closeModal}
+        />
+      </Modal>
+    </div>
+  );
 };
 
 export default Users;

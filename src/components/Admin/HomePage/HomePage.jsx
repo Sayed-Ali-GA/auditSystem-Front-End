@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+    FiShoppingBag,
+    FiTag,
+    FiMapPin,
+    FiUserCheck,
+    FiUser,
+    FiUsers,
+    FiClipboard,
+    FiPlayCircle,
+    FiAward,
+} from "react-icons/fi";
 
 import { useAuth } from "../../Authcontext/Authcontext";
 
@@ -9,9 +20,11 @@ import locationServices from "../../../services/locationServices";
 import OpsManagerServices from "../../../services/OpsManagerServices";
 import storeManagerServices from "../../../services/StoreManagerServices";
 import AuditPointsServices from "../../../services/AuditPointsServices";
+import usersServices from "../../../services/UserServices";
 
+import LoadingState from "../Shared/LoadingState";
+import "../Shared/theme.css";
 import "./HomePage.css";
-
 
 const HomePage = () => {
 
@@ -23,12 +36,23 @@ const HomePage = () => {
     const [locations, setLocations] = useState([]);
     const [opsManagers, setOpsManagers] = useState([]);
     const [storeManagers, setStoreManagers] = useState([]);
+    const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+        const getUsers = async () => {
+            try {
+                const data = await usersServices.index();
+                setUsers(data);
+            } catch (error) {
+                console.log(error);
+            }
+        };
+        getUsers();
+    }, []);
 
 
     useEffect(() => {
-
         const getStoreManagers = async () => {
             try {
                 const data = await storeManagerServices.index();
@@ -40,8 +64,6 @@ const HomePage = () => {
         getStoreManagers();
     }, []);
 
-
-
     useEffect(() => {
         const getAuditPoints = async () => {
             try {
@@ -52,10 +74,7 @@ const HomePage = () => {
             }
         };
         getAuditPoints();
-
     }, []);
-
-
 
     useEffect(() => {
         const getStores = async () => {
@@ -69,10 +88,7 @@ const HomePage = () => {
             }
         };
         getStores();
-
     }, []);
-
-
 
     useEffect(() => {
         const getBrands = async () => {
@@ -86,8 +102,6 @@ const HomePage = () => {
         getBrands();
     }, []);
 
-
-
     useEffect(() => {
         const getLocations = async () => {
             try {
@@ -100,7 +114,6 @@ const HomePage = () => {
         getLocations();
     }, []);
 
-
     useEffect(() => {
         const getOpsManagers = async () => {
             try {
@@ -111,146 +124,122 @@ const HomePage = () => {
             }
         };
         getOpsManagers();
-
     }, []);
 
     const roleName = {
         1: "Admin",
         2: "Ops Manager",
-        3: "Auditor"
+        3: "Auditor",
     }[currentUser?.RoleID];
 
+
+            const heroMessage = {
+            1: {
+                title: `Welcome back, ${currentUser?.UserName}`,
+                description:
+                    "Manage users, stores, brands, locations, and audit settings from one centralized dashboard.",
+            },
+            2: {
+                title: `Welcome back, ${currentUser?.UserName}`,
+                description:
+                    "Monitor audit points, oversee store performance, and ensure operational excellence across your assigned locations.",
+            },
+            3: {
+                title: `Welcome back, ${currentUser?.UserName}`,
+                description:
+                    "Start your assigned audits, record observations, and submit accurate audit reports efficiently.",
+            },
+        };
+
+        const hero = heroMessage[currentUser?.RoleID];
+
+
+
     if (loading) {
-        return <h2>Loading...</h2>;
+        return (
+            <div className="ag-main">
+                <LoadingState label="Loading dashboard..." />
+            </div>
+        );
     }
 
-
-    console.log("User: ", currentUser)
-
     return (
+        <div className="ag-main">
 
-                <div className="home-page">
+            <div className="ag-home-hero">
+                <h1>{hero.title}</h1>
 
+                <p>{hero.description}</p>
 
-        <div className="user-info">
-            <h1>Welcome back, {currentUser?.UserName}</h1>
-            <span className="role-badge">{roleName}</span>
-        </div>
+                <span className="ag-role-badge">
+                    <FiAward /> {roleName}
+                </span>
+            </div>
 
+            <div className="ag-section-title">Overview</div>
 
-            <p>
-                Manage stores, audits, criteria and reports efficiently.
-            </p>
-
-
-
-            <div className="dashboard-cards">
-
-
+            <div className="ag-stat-grid">
 
                 {currentUser?.RoleID === 1 && (
-
                     <>
-
-
-                        <Link to="/stores">
-                            <div className="card">
-                                <h3>Stores</h3>
-                                <h2>{stores.length}</h2>
-                            </div>
+                        <Link to="/stores" className="ag-stat-card">
+                            <div className="ag-stat-icon"><FiShoppingBag /></div>
+                            <h3>Stores</h3>
+                            <div className="ag-stat-value">{stores.length}</div>
                         </Link>
 
-
-
-                        <Link to="/brands">
-                            <div className="card">
-                                <h3>Brands</h3>
-                                <h2>{brands.length}</h2>
-                            </div>
+                        <Link to="/brands" className="ag-stat-card">
+                            <div className="ag-stat-icon"><FiTag /></div>
+                            <h3>Brands</h3>
+                            <div className="ag-stat-value">{brands.length}</div>
                         </Link>
 
-
-
-                        <Link to="/location">
-                            <div className="card">
-                                <h3>Locations</h3>
-                                <h2>{locations.length}</h2>
-                            </div>
+                        <Link to="/location" className="ag-stat-card">
+                            <div className="ag-stat-icon"><FiMapPin /></div>
+                            <h3>Locations</h3>
+                            <div className="ag-stat-value">{locations.length}</div>
                         </Link>
 
-
-
-                        <Link to="/opsmanagers">
-                            <div className="card">
-                                <h3>Ops Managers</h3>
-                                <h2>{opsManagers.length}</h2>
-                            </div>
+                        <Link to="/opsmanagers" className="ag-stat-card">
+                            <div className="ag-stat-icon"><FiUserCheck /></div>
+                            <h3>Ops Managers</h3>
+                            <div className="ag-stat-value">{opsManagers.length}</div>
                         </Link>
 
-
-
-                        <Link to="/storemanagers">
-                            <div className="card">
-                                <h3>Store Managers</h3>
-                                <h2>{storeManagers.length}</h2>
-                            </div>
+                        <Link to="/storemanagers" className="ag-stat-card">
+                            <div className="ag-stat-icon"><FiUser /></div>
+                            <h3>Store Managers</h3>
+                            <div className="ag-stat-value">{storeManagers.length}</div>
                         </Link>
 
-
-
-                        <Link to="/users">
-                            <div className="card">
-                                <h3>Users</h3>
-                                <h2>Manage</h2>
-                            </div>
+                        <Link to="/users" className="ag-stat-card">
+                            <div className="ag-stat-icon"><FiUsers /></div>
+                            <h3>Users</h3>
+                            <div className="ag-stat-value">{users.length}</div>
                         </Link>
-
-
                     </>
-
                 )}
-
-
-
 
                 {(currentUser?.RoleID === 1 || currentUser?.RoleID === 2) && (
-
-                    <Link to="/audit-points">
-
-                        <div className="card">
-                            <h3>Audit</h3>
-                            <h2>{auditPoint.length}</h2>
-                        </div>
-
+                    <Link to="/audit-points" className="ag-stat-card">
+                        <div className="ag-stat-icon"><FiClipboard /></div>
+                        <h3>Audit</h3>
+                        <div className="ag-stat-value">{auditPoint.length}</div>
                     </Link>
-
                 )}
-
-
 
                 {currentUser?.RoleID === 3 && (
-
-                    <Link to="/audit">
-
-                        <div className="card">
-                            <h3>Start Audit</h3>
-                            <h2>Open</h2>
-                        </div>
-
+                    <Link to="/audit" className="ag-stat-card">
+                        <div className="ag-stat-icon"><FiPlayCircle /></div>
+                        <h3>Start Audit</h3>
+                        <div className="ag-stat-value">Open</div>
                     </Link>
-
                 )}
-
-
 
             </div>
 
-
         </div>
-
     );
-
 };
-
 
 export default HomePage;

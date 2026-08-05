@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
-
+import { FiTag, FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
 
 import BrandForm from "./BrandsForm";
 import brandService from "../../../services/BrandServices";
+import PageHeader from "../Shared/PageHeader";
+import LoadingState from "../Shared/LoadingState";
+import Modal from "../Shared/Modal";
+import "../Shared/theme.css";
 
 
 const Brands = () => {
@@ -12,6 +15,7 @@ const Brands = () => {
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingBrand, setEditingBrand] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
 
   useEffect(() => {
@@ -31,6 +35,21 @@ const Brands = () => {
   }, []);
 
 
+  const openAddModal = () => {
+    setEditingBrand(null);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (brand) => {
+    setEditingBrand(brand);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingBrand(null);
+  };
+
 
   const handleAddBrand = async (brandData) => {
   try {
@@ -47,8 +66,6 @@ const Brands = () => {
             : brand
         )
       );
-
-      setEditingBrand(null);
 
       Swal.fire({
         icon: "success",
@@ -67,15 +84,27 @@ const Brands = () => {
         text: "Brand added successfully.",
       });
     }
+
+    closeModal();
+
   } catch (error) {
     console.log(error);
+    Swal.fire({
+      icon: "error",
+      title: "Error!",
+      text: "Something went wrong.",
+    });
   }
 };
 
 
 
   if (loading) {
-    return <h2>Loading...</h2>;
+    return (
+      <div className="ag-main">
+        <LoadingState label="Loading brands..." />
+      </div>
+    );
   }
 
 
@@ -101,7 +130,7 @@ const handleDeleteBrand = async (brandid) => {
 
     Swal.fire({
       title: "Deleted!",
-      text: `"The brand has been deleted."`,
+      text: "The brand has been deleted.",
       icon: "success",
     });
   } catch (error) {
@@ -116,65 +145,100 @@ const handleDeleteBrand = async (brandid) => {
 
 
   return (
-    <>
+    <div className="ag-main">
 
-    <h2>
-        {editingBrand ? "Edit Brand" : "Add New Brand"}
-    </h2>
-
-      <BrandForm 
-        handleAddBrand={handleAddBrand}
-        editingBrand={editingBrand}
+      <PageHeader
+        icon={<FiTag />}
+        eyebrow="Catalog"
+        title="Brands"
+        subtitle="Create and manage the brands used across stores and audits."
       />
 
+      <div className="ag-card">
 
-      <h1>Brands</h1>
+        <div className="ag-card-title-row">
+          <div className="ag-card-title">
+            <FiTag />
+            All brands
+          </div>
 
-      <table>
+          <button
+            type="button"
+            className="ag-btn ag-btn-primary ag-btn-sm"
+            onClick={openAddModal}
+          >
+            <FiPlus /> Add brand
+          </button>
+        </div>
 
-        <thead>
-          <tr>
-            <th>Sl. No.</th>
-            <th>Brand Name</th>
-            <th>Edit</th>
-            <th>Delete</th>
-          </tr>
-        </thead>
+        <div className="ag-table-wrap">
+          <table className="ag-table">
+            <thead>
+              <tr>
+                <th>Sl. No.</th>
+                <th>Brand name</th>
+                <th>Edit</th>
+                <th>Delete</th>
+              </tr>
+            </thead>
 
+            <tbody>
+              {brands.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="ag-empty-state">No brands yet.</td>
+                </tr>
+              )}
 
-        <tbody>
+              {brands.map((brand, index) => (
+                <tr key={brand.brandid}>
+                  <td data-label="Sl. No.">{index + 1}</td>
+                  <td data-label="Brand name">{brand.brandname}</td>
 
-          {brands.map((brand, index) => (
+                  <td data-label="Edit">
+                    <div className="ag-row-actions">
+                      <button
+                        className="ag-icon-btn edit"
+                        title="Edit"
+                        onClick={() => openEditModal(brand)}
+                      >
+                        <FiEdit2 />
+                      </button>
+                    </div>
+                  </td>
 
-            <tr key={brand.brandid}>
-              <td>{index + 1}</td>
-              <td>
-                {brand.brandname}
-              </td>
+                  <td data-label="Delete">
+                    <div className="ag-row-actions">
+                      <button
+                        className="ag-icon-btn delete"
+                        title="Delete"
+                        onClick={() => handleDeleteBrand(brand.brandid)}
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-              <td>
-                <button onClick={() => setEditingBrand(brand)}>
-                    Edit
-              </button>
-              </td>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        icon={<FiTag />}
+        title={editingBrand ? "Edit brand" : "Add new brand"}
+      >
 
-             
-           <td>
-              <button onClick={() => handleDeleteBrand(brand.brandid)}>
-                Delete
-              </button>
-          </td>
+    
+        <BrandForm
+          handleAddBrand={handleAddBrand}
+          editingBrand={editingBrand}
+        />
+      </Modal>
 
-            </tr>
-
-          ))}
-
-        </tbody>
-
-      </table>
-
-
-    </>
+    </div>
   );
 };
 

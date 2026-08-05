@@ -60,7 +60,7 @@ const AuditsList = () => {
                         All audits submitted so far.
                     </p>
                 </div>
-                <Link to="/audit" className="audit-btn">
+                <Link to="/audit-points" className="audit-btn">
                     + New Audit
                 </Link>
             </div>
@@ -121,6 +121,7 @@ const AuditsList = () => {
                                             </span>
                                         )}
                                     </td>
+
                                     <td style={{ whiteSpace: "nowrap" }}>
                                         <Link
                                             to={`/Audits/${audit.assignmentid}`}
@@ -128,6 +129,7 @@ const AuditsList = () => {
                                         >
                                             View
                                         </Link>{" "}
+                                        
                                         {canDelete && (
                                             <button
                                                 className="audit-btn danger"

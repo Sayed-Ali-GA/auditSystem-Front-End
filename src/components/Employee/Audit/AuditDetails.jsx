@@ -188,7 +188,7 @@ const AuditDetails = () => {
                             : `Store #${storeSerial}`}
                     </p>
                 </div>
-                <Link to="/AuditForm" className="audit-btn secondary">
+                <Link to="/audit" className="audit-btn secondary">
                     Change Store
                 </Link>
             </div>
@@ -212,6 +212,7 @@ const AuditDetails = () => {
                         <input
                             type="date"
                             value={auditDate}
+                            min={new Date().toISOString().split("T")[0]}
                             onChange={(e) => setAuditDate(e.target.value)}
                         />
                     </div>

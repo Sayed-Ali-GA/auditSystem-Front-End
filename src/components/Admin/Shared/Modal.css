@@ -1,0 +1,119 @@
+@keyframes ag-modal-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ag-modal-pop-in {
+  from { opacity: 0; transform: translateY(14px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ag-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 29, 35, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 200;
+  animation: ag-modal-fade-in .18s ease;
+}
+
+.ag-modal {
+  position: relative;
+  width: min(92vw, 960px);
+  height: 88vh;
+  background: var(--ag-white);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 60px rgba(26, 29, 35, 0.35);
+  overflow: hidden;
+  animation: ag-modal-pop-in .22s cubic-bezier(.2, .8, .3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Seam bar — a quiet nod to Apparel Group's stitching, not a decoration for its own sake */
+.ag-modal::before {
+  content: "";
+  display: block;
+  height: 6px;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, var(--ag-gold-dark), var(--ag-gold), var(--ag-gold-light));
+}
+
+.ag-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px dashed var(--ag-gray-200);
+}
+
+@media (min-width: 576px) {
+  .ag-modal-header { padding: 26px 32px 20px; }
+}
+
+.ag-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ag-black);
+}
+
+@media (min-width: 576px) {
+  .ag-modal-title { font-size: 21px; }
+}
+
+.ag-modal-title svg { color: var(--ag-gold-dark); flex-shrink: 0; font-size: 22px; }
+
+.ag-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  border: 1px solid var(--ag-gray-200);
+  background: var(--ag-gray-50);
+  color: var(--ag-gray-700);
+  cursor: pointer;
+  font-size: 18px;
+  transition: all .15s ease;
+}
+.ag-modal-close:hover {
+  background: var(--ag-danger-bg);
+  color: var(--ag-danger);
+  border-color: #e3b3ac;
+}
+
+.ag-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (min-width: 576px) {
+  .ag-modal-body { padding: 32px; }
+}
+
+/* On phones/small tablets the modal fills the viewport like a full-screen
+   sheet (Bootstrap's `md` breakpoint — matches when the app switches to
+   the stacked mobile layout everywhere else) */
+@media (max-width: 767.98px) {
+  .ag-modal-overlay { padding: 0; align-items: flex-end; }
+  .ag-modal {
+    width: 100vw;
+    height: 95vh;
+    max-width: none;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+}

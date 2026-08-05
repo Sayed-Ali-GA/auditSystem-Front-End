@@ -1,23 +1,31 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-
+import { FiUserCheck, FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
 
 import OpsManagerService from "../../../services/OpsManagerServices";
-import "./OpsManager.css";
-import { Link } from "react-router-dom";
 import OpsManagerForm from "./OpsManagerForm";
 
+import PageHeader from "../Shared/PageHeader";
+import LoadingState from "../Shared/LoadingState";
+import Modal from "../Shared/Modal";
+
+import "../Shared/theme.css";
+import "./OpsManager.css";
 
 const OpsManager = () => {
-
   const [opsManagers, setOpsManagers] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [editingOpsManager, setEditingOpsManager] = useState(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const getOpsManagers = async () => {
       try {
         const data = await OpsManagerService.index();
+
         setOpsManagers(data);
       } catch (error) {
         console.log(error);
@@ -25,162 +33,232 @@ const OpsManager = () => {
         setLoading(false);
       }
     };
-    getOpsManagers();
 
+    getOpsManagers();
   }, []);
 
-  if (loading) {
-    return <h2>Loading...</h2>;
-  }
+  const openAddModal = () => {
+    setEditingOpsManager(null);
 
+    setIsModalOpen(true);
+  };
 
+  const openEditModal = (opsManager) => {
+    setEditingOpsManager(opsManager);
 
-//   console.log(opsManagers);
+    setIsModalOpen(true);
+  };
 
+  const closeModal = () => {
+    setIsModalOpen(false);
 
+    setEditingOpsManager(null);
+  };
 
-const handleAddOpsManager = async (opsManagerData) => {
-  try {
+  const handleAddOpsManager = async (opsManagerData) => {
+    try {
+      if (editingOpsManager) {
+        const updatedOpsManager = await OpsManagerService.update(
+          editingOpsManager.opsmanagerid,
 
-    if (editingOpsManager) {
+          opsManagerData,
+        );
 
-      const updatedOpsManager = await OpsManagerService.update(
-        editingOpsManager.opsmanagerid,
-        opsManagerData
-      );
+        setOpsManagers((prev) =>
+          prev.map((item) =>
+            item.opsmanagerid === editingOpsManager.opsmanagerid
+              ? updatedOpsManager
+              : item,
+          ),
+        );
 
+        Swal.fire({
+          icon: "success",
 
-      setOpsManagers((prev) =>
-        prev.map((opsManager) =>
-          opsManager.opsmanagerid === editingOpsManager.opsmanagerid
-            ? updatedOpsManager
-            : opsManager
-        )
-      );
+          title: "Updated!",
 
+          text: "Ops Manager updated successfully.",
+        });
+      } else {
+        const newOpsManager = await OpsManagerService.create(opsManagerData);
 
-      setEditingOpsManager(null);
+        setOpsManagers((prev) => [...prev, newOpsManager]);
 
+        Swal.fire({
+          icon: "success",
 
+          title: "Added!",
+
+          text: "Ops Manager added successfully.",
+        });
+      }
+
+      closeModal();
+    } catch (error) {
       Swal.fire({
-        icon: "success",
-        title: "Updated!",
-        text: "Ops Manager updated successfully.",
+        icon: "error",
+
+        title: "Error!",
+
+        text: "Something went wrong.",
       });
-
-
-    } else {
-
-      const newOpsManager = await OpsManagerService.create(opsManagerData);
-
-      setOpsManagers((prev) => [
-        ...prev,
-        newOpsManager
-      ]);
-
-
-      Swal.fire({
-        icon: "success",
-        title: "Added!",
-        text: "Ops Manager added successfully.",
-      });
-
     }
-
-
-  } catch (error) {
-    console.log(error);
-  }
-};
-  
+  };
 
   const handleDeleteOpsManager = async (opsmanagerid) => {
-        const result = await Swal.fire({
-          title: "Are you sure?",
-          text: "You won't be able to undo this!",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonText: "Yes, delete it!",
-          cancelButtonText: "Cancel",
-        });
-      
-        if (!result.isConfirmed) return;
-      
-        try {
-          await OpsManagerService.remove(opsmanagerid);
-      
-          setOpsManagers((prev) =>
-            prev.filter((opsManagers) => opsManagers.opsmanagerid !== opsmanagerid)
-          );
-      
-          Swal.fire({
-            title: "Deleted!",
-            text: `"The Ops Manager has been deleted."`,
-            icon: "success",
-          });
-        } catch (error) {
-          Swal.fire({
-            title: "Error!",
-            text: "This Ops Manager is assigned to one or more.",
-            icon: "error",
-          });
-        }
-      };
-    
-  
+    const result = await Swal.fire({
+      title: "Are you sure?",
 
+      text: "You won't be able to undo this!",
+
+      icon: "warning",
+
+      showCancelButton: true,
+
+      confirmButtonText: "Yes, delete it!",
+
+      cancelButtonText: "Cancel",
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await OpsManagerService.remove(opsmanagerid);
+
+      setOpsManagers((prev) =>
+        prev.filter((item) => item.opsmanagerid !== opsmanagerid),
+      );
+
+      Swal.fire({
+        title: "Deleted!",
+
+        text: "The Ops Manager has been deleted.",
+
+        icon: "success",
+      });
+    } catch (error) {
+      Swal.fire({
+        title: "Error!",
+
+        text: "This Ops Manager is assigned to one or more.",
+
+        icon: "error",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="ag-main">
+        <LoadingState label="Loading ops managers..." />
+      </div>
+    );
+  }
 
   return (
-    <>
+    <div className="ag-main">
+      <PageHeader
+        icon={<FiUserCheck />}
+        eyebrow="Team"
+        title="Ops Managers"
+        subtitle="Manage operations managers assigned to stores."
+      />
 
-    <h2>
-      {editingOpsManager ? "Edit Ops Manager" : "Add New Ops Manager"}
-    </h2>
+      <div className="ag-card">
+        <div className="ag-card-title-row">
+          <div className="ag-card-title">
+            <FiUserCheck />
+            All ops managers
+          </div>
 
+          <button
+            type="button"
+            className="ag-btn ag-btn-primary ag-btn-sm"
+            onClick={openAddModal}
+          >
+            <FiPlus />
+            Add ops manager
+          </button>
+        </div>
 
-    <OpsManagerForm
-      handleAddOpsManager={handleAddOpsManager}
-      editingOpsManager={editingOpsManager}
-    />
-
-      <h1>Ops Managers</h1>
-
-    <table>
-        <thead>
-            <tr>
+        <div className="ag-table-wrap">
+          <table className="ag-table">
+            <thead>
+              <tr>
                 <th>Sl. No.</th>
+
                 <th>Name</th>
+
                 <th>Oracle ID</th>
+
                 <th>Edit</th>
+
                 <th>Delete</th>
-            </tr>
-        </thead>
+              </tr>
+            </thead>
 
-        <tbody>
-            {opsManagers.map((opsManager) => (
+            <tbody>
+              {opsManagers.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="ag-empty-state">
+                    No ops managers yet.
+                  </td>
+                </tr>
+              )}
+
+              {opsManagers.map((opsManager, index) => (
                 <tr key={opsManager.opsmanagerid}>
-                    <td>{opsManager.opsmanagerid}</td>
-                    <td>{opsManager.opsmanagername}</td>
-                    <td>{opsManager.oracleid}</td>
+                  <td>{index + 1}</td>
 
+                  <td>{opsManager.opsmanagername}</td>
 
-                   <button onClick={() => setEditingOpsManager(opsManager)}>
-                      Edit
-                  </button>
+                  <td>{opsManager.oracleid}</td>
 
                   <td>
-                    <button onClick={() => handleDeleteOpsManager(opsManager.opsmanagerid)}>
-                       Delete
-                    </button>
-                </td>
+                    <div className="ag-row-actions">
+                      <button
+                        className="ag-icon-btn edit"
+                        title="Edit"
+                        onClick={() => openEditModal(opsManager)}
+                      >
+                        <FiEdit2 />
+                      </button>
+                    </div>
+                  </td>
 
+                  <td>
+                    <div className="ag-row-actions">
+                      <button
+                        className="ag-icon-btn delete"
+                        title="Delete"
+                        onClick={() =>
+                          handleDeleteOpsManager(opsManager.opsmanagerid)
+                        }
+                      >
+                        <FiTrash2 />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-             ))}
-        </tbody>
-    </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-    </>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        icon={<FiUserCheck />}
+        title={editingOpsManager ? "Edit ops manager" : "Add new ops manager"}
+      >
+        <OpsManagerForm
+          handleAddOpsManager={handleAddOpsManager}
+          editingOpsManager={editingOpsManager}
+        />
+      </Modal>
+    </div>
   );
-};  
+};
 
 export default OpsManager;

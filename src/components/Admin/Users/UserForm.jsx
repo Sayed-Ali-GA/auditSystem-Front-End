@@ -1,183 +1,225 @@
 import React, { useState, useEffect } from "react";
-import Swal from "sweetalert2";
 import Select from "react-select";
-import userService from "../../../services/UserServices";
+import {
+  FiHash,
+  FiUser,
+  FiLock,
+  FiMapPin,
+  FiShield,
+  FiSave,
+  FiX,
+  FiAlertCircle,
+} from "react-icons/fi";
 
 const initialUser = {
-    OracleID: "",
-    UserName: "",
-    Password: "",
-    LocationID: null,
-    RoleID: ""
+  OracleID: "",
+  UserName: "",
+  Password: "",
+  LocationID: null,
+  RoleID: "",
 };
 
-const UserForm = ({ editingUser, onCancelEdit, onSuccess, locations = [] }) => {
-    const [formData, setFormData] = useState(initialUser);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [formError, setFormError] = useState("");
+const UserForm = ({
+  editingUser,
+  handleAddUser,
+  onCancelEdit,
+  locations = [],
+}) => {
+  const [formData, setFormData] = useState(initialUser);
+  const [formError, setFormError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    useEffect(() => {
-        if (editingUser) {
-            setFormData({
-                OracleID: editingUser.oracleid || "",
-                UserName: editingUser.username || "",
-                Password: "", 
-                LocationID: editingUser.locationid || null,
-                RoleID: editingUser.roleid || ""
-            });
-        } else {
-            setFormData(initialUser);
-        }
-        setFormError("");
-    }, [editingUser]);
+  useEffect(() => {
+    if (editingUser) {
+      setFormData({
+        OracleID: editingUser.oracleid || "",
+        UserName: editingUser.username || "",
+        Password: "",
+        LocationID: editingUser.locationid || null,
+        RoleID: editingUser.roleid || "",
+      });
+    } else {
+      setFormData(initialUser);
+    }
 
-    const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
-    };
+    setFormError("");
+  }, [editingUser]);
 
-    const locationOptions = locations.map((location) => ({
-        value: location.locationid,
-        label: location.locationname,
-    }));
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setFormError("");
+  const locationOptions = locations.map((location) => ({
+    value: location.locationid,
+    label: location.locationname,
+  }));
 
-        if (!editingUser) {
-            if (!formData.OracleID || !formData.UserName || !formData.Password || !formData.LocationID || !formData.RoleID) {
-                setFormError("Please fill all fields");
-                return;
-            }
-        } else {
-            if (!formData.UserName || !formData.LocationID || !formData.RoleID) {
-                setFormError("Please fill all fields");
-                return;
-            }
-        }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-        setIsSubmitting(true);
-        try {
-            if (editingUser) {
-                await userService.update(editingUser.userid, {
-                    UserName: formData.UserName,
-                    LocationID: formData.LocationID,
-                    RoleID: formData.RoleID,
-                    ...(formData.Password && { Password: formData.Password })
-                });
-            } else {
-                await userService.create(formData);
-            }
+    setFormError("");
 
-            Swal.fire({
-                icon: "success",
-                title: editingUser ? "User Updated" : "User Created",
-                timer: 1500,
-                showConfirmButton: false
-            });
+    if (!editingUser) {
+      if (
+        !formData.OracleID ||
+        !formData.UserName ||
+        !formData.Password ||
+        !formData.LocationID ||
+        !formData.RoleID
+      ) {
+        setFormError("Please fill all fields");
+        return;
+      }
+    } else {
+      if (!formData.UserName || !formData.LocationID || !formData.RoleID) {
+        setFormError("Please fill all fields");
+        return;
+      }
+    }
 
-            setFormData(initialUser);
-            if (onSuccess) onSuccess();
-        } catch (error) {
-            setFormError(error.message);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+    try {
+      setIsSubmitting(true);
 
-    return (
-        <div>
-            <h3>{editingUser ? "Edit User" : "Create User"}</h3>
+      await handleAddUser(formData);
 
-            <form onSubmit={handleSubmit}>
-                {formError && <p style={{ color: "red" }}>{formError}</p>}
+      setFormData(initialUser);
+    } catch (error) {
+      setFormError(error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-                {!editingUser && (
-                    <div style={{ marginBottom: "10px" }}>
-                        <input
-                            type="number"
-                            name="OracleID"
-                            placeholder="Oracle ID"
-                            value={formData.OracleID}
-                            onChange={handleChange}
-                        />
-                    </div>
-                )}
-
-                <div style={{ marginBottom: "10px" }}>
-                    <input
-                        type="text"
-                        name="UserName"
-                        placeholder="User Name"
-                        value={formData.UserName}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                <div style={{ marginBottom: "10px" }}>
-                    <input
-                        type="password"
-                        name="Password"
-                        placeholder={editingUser ? "New Password (optional)" : "Password"}
-                        value={formData.Password}
-                        onChange={handleChange}
-                    />
-                </div>
-
-             
-                <div style={{ marginBottom: "10px" }}>
-                    <label>Select Location:</label>
-                    <Select
-                        options={locationOptions}
-                        placeholder="Search Location..."
-                        value={
-                            locationOptions.find(
-                                (option) => option.value === formData.LocationID
-                            ) || null
-                        }
-                        onChange={(selectedOption) =>
-                            setFormData({
-                                ...formData,
-                                LocationID: selectedOption ? selectedOption.value : null
-                            })
-                        }
-                        isSearchable
-                    />
-                </div>
-
-                <div style={{ marginBottom: "10px" }}>
-                    <select
-                        name="RoleID"
-                        value={formData.RoleID}
-                        onChange={handleChange}
-                    >
-                        <option value="">Select Role</option>
-                        <option value="2">Ops Manager</option>
-                        <option value="3">Auditor</option>
-                    </select>
-                </div>
-
-                <div>
-                    <button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? "Saving..." : editingUser ? "Update User" : "Create User"}
-                    </button>
-
-                    {editingUser && (
-                        <button 
-                            type="button" 
-                            onClick={onCancelEdit} 
-                            style={{ marginLeft: "10px" }}
-                        >
-                            Cancel
-                        </button>
-                    )}
-                </div>
-            </form>
+  return (
+    <form onSubmit={handleSubmit}>
+      {formError && (
+        <div className="ag-error-banner">
+          <FiAlertCircle />
+          {formError}
         </div>
-    );
+      )}
+
+      <div className="ag-form-grid">
+        {!editingUser && (
+          <div className="ag-field">
+            <label>
+              <FiHash />
+              Oracle ID
+            </label>
+
+            <input
+              type="number"
+              name="OracleID"
+              value={formData.OracleID}
+              placeholder="Oracle ID"
+              onChange={handleChange}
+            />
+          </div>
+        )}
+
+        <div className="ag-field">
+          <label>
+            <FiUser />
+            User name
+          </label>
+
+          <input
+            type="text"
+            name="UserName"
+            value={formData.UserName}
+            placeholder="User name"
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="ag-field">
+          <label>
+            <FiLock />
+            Password
+          </label>
+
+          <input
+            type="password"
+            name="Password"
+            value={formData.Password}
+            placeholder={editingUser ? "New password (optional)" : "Password"}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="ag-field">
+          <label>
+            <FiMapPin />
+            Location
+          </label>
+
+          <Select
+            classNamePrefix="ag-rs"
+            className="ag-select"
+            options={locationOptions}
+            placeholder="Search location..."
+            value={
+              locationOptions.find(
+                (option) => option.value === formData.LocationID,
+              ) || null
+            }
+            onChange={(option) =>
+              setFormData({
+                ...formData,
+                LocationID: option ? option.value : null,
+              })
+            }
+            isSearchable
+          />
+        </div>
+
+        <div className="ag-field">
+          <label>
+            <FiShield />
+            Role
+          </label>
+
+          <select name="RoleID" value={formData.RoleID} onChange={handleChange}>
+            <option value="">Select role</option>
+
+            <option value="2">Ops Manager</option>
+
+            <option value="3">Auditor</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="ag-form-actions">
+        <button
+          type="submit"
+          className="ag-btn ag-btn-primary"
+          disabled={isSubmitting}
+        >
+          <FiSave />
+
+          {isSubmitting
+            ? "Saving..."
+            : editingUser
+              ? "Update User"
+              : "Create User"}
+        </button>
+
+        {editingUser && (
+          <button
+            type="button"
+            className="ag-btn ag-btn-ghost"
+            onClick={onCancelEdit}
+          >
+            <FiX />
+            Cancel
+          </button>
+        )}
+      </div>
+    </form>
+  );
 };
 
 export default UserForm;

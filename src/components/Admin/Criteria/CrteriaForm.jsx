@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { FiCheckSquare, FiSave } from "react-icons/fi";
 
 const CrteriaForm = ({ handleAddCriteria, editingCriteria }) => {
 
@@ -55,25 +56,30 @@ const CrteriaForm = ({ handleAddCriteria, editingCriteria }) => {
     return (
         <form onSubmit={handleSubmit}>
 
-            <p>
-                <label htmlFor="majorcriterianame">
-                    Enter Criteria:
-                </label>
+            <div className="ag-form-grid">
+                <div className="ag-field">
+                    <label htmlFor="majorcriterianame">
+                        <FiCheckSquare /> Criteria name
+                    </label>
 
-                <input
-                    type="text"
-                    name="majorcriterianame"
-                    value={crteriaData.majorcriterianame}
-                    onChange={handleChange}
-                    placeholder="e.g. Store Closing"
-                    required
-                />
-            </p>
+                    <input
+                        type="text"
+                        id="majorcriterianame"
+                        name="majorcriterianame"
+                        value={crteriaData.majorcriterianame}
+                        onChange={handleChange}
+                        placeholder="e.g. Store Closing"
+                        required
+                    />
+                </div>
+            </div>
 
-
-            <button type="submit">
-                {editingCriteria ? "Update Criteria" : "Save Criteria"}
-            </button>
+            <div className="ag-form-actions">
+                <button type="submit" className="ag-btn ag-btn-primary">
+                    <FiSave />
+                    {editingCriteria ? "Update criteria" : "Save criteria"}
+                </button>
+            </div>
 
         </form>
     );

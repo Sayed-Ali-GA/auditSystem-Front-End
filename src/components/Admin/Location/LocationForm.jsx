@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { FiMapPin, FiSave } from "react-icons/fi";
 
 
 const LocationForm = ({ handleAddLocation, editingLocation }) => {
@@ -63,30 +64,27 @@ const LocationForm = ({ handleAddLocation, editingLocation }) => {
 
         <form onSubmit={handleSubmit}>
 
-            <p>
+            <div className="ag-form-grid">
+                <div className="ag-field">
+                    <label><FiMapPin /> Location name</label>
 
-                <label>
-                    Enter Location Name:
-                </label>
+                    <input
+                        type="text"
+                        name="LocationName"
+                        value={locationData.LocationName}
+                        onChange={handleChange}
+                        placeholder="e.g. Manama"
+                        required
+                    />
+                </div>
+            </div>
 
-
-                <input
-                    type="text"
-                    name="LocationName"
-                    value={locationData.LocationName}
-                    onChange={handleChange}
-                    placeholder="e.g. Manama"
-                    required
-                />
-
-            </p>
-
-
-
-            <button type="submit">
-                {editingLocation ? "Update Location" : "Save Location"}
-            </button>
-
+            <div className="ag-form-actions">
+                <button type="submit" className="ag-btn ag-btn-primary">
+                    <FiSave />
+                    {editingLocation ? "Update location" : "Save location"}
+                </button>
+            </div>
 
         </form>
 

@@ -113,14 +113,13 @@ const AuditForm = () => {
 
             {selectedStore && (
                 <div className="audit-actions">
-                <Link
-                    to={`/AuditDetails/${selectedStore.data.storeserial || selectedStore.data.StoreSerial}`}
-                    state={{
-                        store:selectedStore.data
-                    }}
-                >
-                    Start Audit
-                </Link>
+                    <Link
+                        to={`/AuditDetails/${selectedStore.data.storeserial || selectedStore.data.StoreSerial}`}
+                        state={{ store: selectedStore.data }}
+                        className="audit-btn"
+                    >
+                        Start Audit
+                    </Link>
                 </div>
             )}
         </div>
