@@ -187,7 +187,11 @@ const UserForm = ({
 
             <option value="2">Ops Manager</option>
 
-            <option value="3">Auditor</option>
+            <option value="3">Store Manager</option>
+
+            <option value="4">Auditor</option>
+
+            <option value="5">Audit Manager</option>
           </select>
         </div>
       </div>

@@ -11,6 +11,7 @@ import {
     FiShoppingBag,
     FiClipboard,
     FiArchive,
+    FiBarChart2,
     FiLogOut,
     FiMenu,
     FiChevronsLeft,
@@ -32,7 +33,7 @@ const Sidebar = () => {
         navigate("/login", { replace: true });
     };
 
-    const menus = {
+const menus = {
         admin: [
             { name: "Users", path: "/users", icon: <FiUsers /> },
             { name: "Brands", path: "/brands", icon: <FiTag /> },
@@ -43,14 +44,27 @@ const Sidebar = () => {
             { name: "Stores", path: "/stores", icon: <FiShoppingBag /> },
             { name: "Audit Point", path: "/audit-points", icon: <FiClipboard /> },
             { name: "Audits", path: "/Audits", icon: <FiArchive /> },
+            { name: "Reports", path: "/Reports", icon: <FiBarChart2 /> },
         ],
         opsManager: [
             { name: "Audit Point", path: "/audit-points", icon: <FiClipboard /> },
             { name: "Audits", path: "/Audits", icon: <FiArchive /> },
+            { name: "Reports", path: "/Reports", icon: <FiBarChart2 /> },
         ],
         auditor: [
             { name: "Audit", path: "/audit", icon: <FiClipboard /> },
             { name: "Past Audits", path: "/Audits", icon: <FiArchive /> },
+            { name: "Reports", path: "/Reports", icon: <FiBarChart2 /> },
+        ],
+        storeManager: [
+            { name: "Audit Point", path: "/audit-points", icon: <FiClipboard /> },
+            { name: "Audits", path: "/Audits", icon: <FiArchive /> },
+            { name: "Reports", path: "/Reports", icon: <FiBarChart2 /> },
+        ],
+        auditManager: [
+            { name: "Audit Point", path: "/audit-points", icon: <FiClipboard /> },
+            { name: "Audits", path: "/Audits", icon: <FiArchive /> },
+            { name: "Reports", path: "/Reports", icon: <FiBarChart2 /> },
         ],
     };
 
@@ -58,7 +72,9 @@ const Sidebar = () => {
         switch (user?.RoleID) {
             case 1: return menus.admin;
             case 2: return menus.opsManager;
-            case 3: return menus.auditor;
+            case 3: return menus.storeManager;
+            case 4: return menus.auditor;
+            case 5: return menus.auditManager;
             default: return [];
         }
     };

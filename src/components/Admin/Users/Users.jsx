@@ -28,7 +28,9 @@ import "./Users.css";
 const roleNames = {
   1: "Admin",
   2: "Ops Manager",
-  3: "Auditor",
+  3: "Store Manager",
+  4: "Auditor",
+  5: "Audit Manager"
 };
 
 const Users = () => {
