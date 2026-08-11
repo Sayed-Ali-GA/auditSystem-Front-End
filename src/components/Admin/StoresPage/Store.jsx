@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { FiShoppingBag, FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
+import { Link } from "react-router-dom";
+import { FiShoppingBag, FiEdit2, FiTrash2, FiPlus, FiClipboard } from "react-icons/fi";
 
 import brandService from "../../../services/BrandServices";
 import locationServices from "../../../services/locationServices";
@@ -262,6 +263,8 @@ const Stores = () => {
 
                 <th>Store manager</th>
 
+                <th>Audits</th>
+
                 <th>Edit</th>
 
                 <th>Delete</th>
@@ -271,7 +274,7 @@ const Stores = () => {
             <tbody>
               {stores.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="ag-empty-state">
+                  <td colSpan={9} className="ag-empty-state">
                     No stores yet.
                   </td>
                 </tr>
@@ -290,6 +293,18 @@ const Stores = () => {
                   <td>{store.opsmanagername}</td>
 
                   <td>{store.storemanagername}</td>
+
+                  <td>
+                    <div className="ag-row-actions">
+                     <Link
+    className="ag-icon-btn"
+    title={`View audits for ${store.storecode}`}
+    to={`/Audits?store=${store.storeserial}`}
+>
+    <FiClipboard />
+</Link>
+                    </div>
+                  </td>
 
                   <td>
                     <div className="ag-row-actions">

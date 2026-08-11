@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useLocation, useNavigate, Link } from "react-router-dom";
+import { useParams, useLocation, useNavigate, useSearchParams, Link } from "react-router-dom";
+import Swal from "sweetalert2";
 
 import { useAuth } from "../../Authcontext/Authcontext";
 import auditPointServices from "../../../services/AuditPointsServices";
 import auditServices from "../../../services/AuditorServices";
 import "./audit.css";
-
-
 
 const RATING_OPTIONS = [
     { value: "S.V", label: "S.V" },
@@ -15,14 +14,27 @@ const RATING_OPTIONS = [
     { value: "NA", label: "NA" }
 ];
 
+const notify = (icon, title) => {
+    Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon,
+        title,
+        showConfirmButton: false,
+        timer: 2600,
+        timerProgressBar: true,
+    });
+};
+
 const AuditDetails = () => {
     const { user } = useAuth();
-    const { storeSerial } = useParams();
+    const { storeId } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
 
+    const draftId = searchParams.get("draftId");
     const store = location.state?.store || null;
-
 
     const [cashierName, setCashierName] = useState("");
     const [auditDate, setAuditDate] = useState("");
@@ -30,36 +42,67 @@ const AuditDetails = () => {
 
     const [auditPoints, setAuditPoints] = useState([]);
     const [loadingPoints, setLoadingPoints] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
 
     useEffect(() => {
-        const getAuditPoints = async () => {
+        const init = async () => {
             try {
                 setLoadingPoints(true);
-                const response = await auditPointServices.index();
-                const data = response.map((point) => ({
-                    id: point.auditpointid,
-                    criteria: point.majorcriterianame,
-                    subPoint: point.subpointcriteria,
-                    auditPoint: point.auditcomment,
-                    risk: point.riskmatrix,
-                    rating: "",
-                    weightage: Number(point.weightage),
-                    score: null,
-                    percentage: null,
-                    observation: ""
-                }));
+                setError("");
+
+                const pointsResponse = await auditPointServices.index();
+
+                let existingDraft = null;
+                if (draftId) {
+                    existingDraft = await auditServices.show(draftId);
+                }
+
+                const evalMap = new Map();
+                if (existingDraft?.evaluations) {
+                    existingDraft.evaluations.forEach((ev) => {
+                        evalMap.set(ev.AuditPointID, ev);
+                    });
+                }
+
+                const data = pointsResponse.map((point) => {
+                    const existing = evalMap.get(point.auditpointid);
+                    return {
+                        id: point.auditpointid,
+                        criteria: point.majorcriterianame,
+                        subPoint: point.subpointcriteria,
+                        auditPoint: point.auditcomment,
+                        risk: point.riskmatrix,
+                        rating: existing?.Rating || "",
+                        weightage: Number(point.weightage),
+                        score: existing?.Score ?? null,
+                        percentage: existing?.Percentage ?? null,
+                        observation: existing?.Observation || ""
+                    };
+                });
+
                 setAuditPoints(data);
-            } catch (error) {
-                console.log(error);
+
+                if (existingDraft) {
+                    setCashierName(existingDraft.cashiername || "");
+                    setAuditDate(
+                        existingDraft.auditdate
+                            ? new Date(existingDraft.auditdate).toISOString().split("T")[0]
+                            : ""
+                    );
+                }
+            } catch (err) {
+                console.log(err);
                 setError("Could not load audit points. Please try again.");
             } finally {
                 setLoadingPoints(false);
             }
         };
-        getAuditPoints();
-    }, []);
+
+        init();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [draftId]);
 
     const handleRating = (index, value) => {
         const updated = [...auditPoints];
@@ -87,7 +130,6 @@ const AuditDetails = () => {
         updated[index].observation = value;
         setAuditPoints(updated);
     };
-
 
     const summary = useMemo(() => {
         const rated = auditPoints.filter((p) => p.score !== null);
@@ -117,19 +159,76 @@ const AuditDetails = () => {
     }, [auditPoints]);
 
     const validate = () => {
-        if (!cashierName.trim()) return "Please enter the cashier name."
-        ;
+        if (!cashierName.trim()) return "Please enter the cashier name.";
         if (!auditDate) return "Please select an audit date.";
-
-        if (!store) return "Store information is missing — go back and select a store.";
-
+        if (!draftId && !store)
+            return "Store information is missing — go back and select a store.";
         if (!user?.UserID)
             return "You must be logged in as an auditor to submit an audit.";
-
         if (auditPoints.some((p) => !p.rating))
             return "Please rate every audit point (use NA if not applicable).";
-
         return "";
+    };
+
+    const buildEvaluationsPayload = () =>
+        auditPoints.map((p) => ({
+            AuditPointID: p.id,
+            Rating: p.rating || null,
+            Score: p.score,
+            Percentage: p.percentage,
+            Observation: p.observation
+        }));
+
+    const saveDraft = async () => {
+        if (!draftId && !store) {
+            setError("Store information is missing — go back and select a store.");
+            return;
+        }
+
+        setError("");
+        setSaving(true);
+
+        try {
+            if (draftId) {
+                await auditServices.update(draftId, {
+                    cashierName: cashierName || null,
+                    auditDate: auditDate || null,
+                    status: "Draft",
+                    evaluations: buildEvaluationsPayload()
+                });
+                notify("success", "Draft saved.");
+            } else {
+                const opsManagerID = store.opsmanagerid || store.OpsManagerID;
+
+                const payload = {
+                    storeSerial: Number(storeId),
+                    opsManagerID,
+                    auditorID: user.UserID,
+                    cashierName,
+                    auditDate,
+                    auditOverstation,
+                    status: "Draft",
+                    auditPoints: auditPoints.map((p) => ({
+                        id: p.id,
+                        rating: p.rating,
+                        score: p.score,
+                        percentage: p.percentage,
+                        percentageWeightage: p.weightage,
+                        observation: p.observation
+                    }))
+                };
+
+                const result = await auditServices.create(payload);
+                setSearchParams({ draftId: String(result.assignmentID) });
+                notify("success", "Draft saved. You can continue anytime from 'Start an Audit'.");
+            }
+        } catch (err) {
+            console.log(err);
+            setError("Failed to save draft. Please try again.");
+            notify("error", "Failed to save draft.");
+        } finally {
+            setSaving(false);
+        }
     };
 
     const submitAudit = async () => {
@@ -143,33 +242,46 @@ const AuditDetails = () => {
         setSubmitting(true);
 
         try {
-            const opsManagerID =
-                store.opsmanagerid || store.OpsManagerID;
+            let assignmentId = draftId;
+
+            if (draftId) {
+                await auditServices.update(draftId, {
+                    cashierName,
+                    auditDate,
+                    auditOverstation,
+                    status: "Submitted",
+                    evaluations: buildEvaluationsPayload()
+                });
+            } else {
+                const opsManagerID = store.opsmanagerid || store.OpsManagerID;
 
                 const payload = {
-                storeSerial:
-                    Number(storeSerial),
-                opsManagerID,
-                auditorID: user.UserID,
-                cashierName,
-                auditDate,
-                auditOverstation,
-                auditPoints: auditPoints.map((p) => ({
-                    id: p.id,
-                    rating: p.rating,
-                    score: p.score,
-                    percentage: p.percentage,
-                    percentageWeightage: p.weightage,
-                    observation: p.observation
-                }))
-            };
-            const result = await auditServices.create(payload);
-            navigate(`/Audits/${result.assignmentID}`, {
-                state: { justCreated: true }
-            });
-        } catch (error) {
-            console.log(error);
+                    storeSerial: Number(storeId),
+                    opsManagerID,
+                    auditorID: user.UserID,
+                    cashierName,
+                    auditDate,
+                    auditOverstation,
+                    status: "Submitted",
+                    auditPoints: auditPoints.map((p) => ({
+                        id: p.id,
+                        rating: p.rating,
+                        score: p.score,
+                        percentage: p.percentage,
+                        percentageWeightage: p.weightage,
+                        observation: p.observation
+                    }))
+                };
+
+                const result = await auditServices.create(payload);
+                assignmentId = result.assignmentID;
+            }
+
+            navigate(`/Audits/${assignmentId}`, { state: { justCreated: true } });
+        } catch (err) {
+            console.log(err);
             setError("Failed to submit the audit. Please try again.");
+            notify("error", "Failed to submit the audit.");
         } finally {
             setSubmitting(false);
         }
@@ -185,13 +297,20 @@ const AuditDetails = () => {
                             ? `${store.storecode || store.StoreCode} — ${
                                   store.brandname || store.BrandName
                               }`
-                            : `Store #${storeSerial}`}
+                            : `Store #${storeId}`}
                     </p>
                 </div>
                 <Link to="/audit" className="audit-btn secondary">
                     Change Store
                 </Link>
             </div>
+
+            {draftId && (
+                <div className="audit-draft-status-banner">
+                    📝 You're editing a saved draft. Your progress is preserved — save
+                    anytime and come back later.
+                </div>
+            )}
 
             {error && <div className="audit-error">{error}</div>}
 
@@ -212,7 +331,6 @@ const AuditDetails = () => {
                         <input
                             type="date"
                             value={auditDate}
-                            min={new Date().toISOString().split("T")[0]}
                             onChange={(e) => setAuditDate(e.target.value)}
                         />
                     </div>
@@ -223,9 +341,7 @@ const AuditDetails = () => {
                             type="text"
                             value={auditOverstation}
                             placeholder="Optional"
-                            onChange={(e) =>
-                                setAuditOverstation(e.target.value)
-                            }
+                            onChange={(e) => setAuditOverstation(e.target.value)}
                         />
                     </div>
                 </div>
@@ -260,45 +376,26 @@ const AuditDetails = () => {
                                     <td>
                                         <select
                                             value={point.rating}
-                                            onChange={(e) =>
-                                                handleRating(
-                                                    index,
-                                                    e.target.value
-                                                )
-                                            }
+                                            onChange={(e) => handleRating(index, e.target.value)}
                                         >
                                             <option value="">Select</option>
                                             {RATING_OPTIONS.map((opt) => (
-                                                <option
-                                                    key={opt.value}
-                                                    value={opt.value}
-                                                >
+                                                <option key={opt.value} value={opt.value}>
                                                     {opt.label}
                                                 </option>
                                             ))}
                                         </select>
                                     </td>
                                     <td>{point.weightage}</td>
+                                    <td>{point.score !== null ? point.score.toFixed(2) : "-"}</td>
                                     <td>
-                                        {point.score !== null
-                                            ? point.score.toFixed(2)
-                                            : "-"}
-                                    </td>
-                                    <td>
-                                        {point.percentage !== null
-                                            ? `${point.percentage}%`
-                                            : "-"}
+                                        {point.percentage !== null ? `${point.percentage}%` : "-"}
                                     </td>
                                     <td>
                                         <textarea
                                             value={point.observation}
                                             placeholder="Write..."
-                                            onChange={(e) =>
-                                                handleObservation(
-                                                    index,
-                                                    e.target.value
-                                                )
-                                            }
+                                            onChange={(e) => handleObservation(index, e.target.value)}
                                         />
                                     </td>
                                 </tr>
@@ -332,9 +429,7 @@ const AuditDetails = () => {
                         <span>Risk Level</span>
                         <strong>
                             {summary.riskLevel && (
-                                <span
-                                    className={`audit-badge ${summary.riskLevel}`}
-                                >
+                                <span className={`audit-badge ${summary.riskLevel}`}>
                                     {summary.riskLevel}
                                 </span>
                             )}
@@ -345,9 +440,17 @@ const AuditDetails = () => {
 
             <div className="audit-actions">
                 <button
+                    className="audit-btn secondary"
+                    onClick={saveDraft}
+                    disabled={saving || submitting || loadingPoints}
+                >
+                    {saving ? "Saving…" : "Save Draft"}
+                </button>
+
+                <button
                     className="audit-btn"
                     onClick={submitAudit}
-                    disabled={submitting || loadingPoints}
+                    disabled={submitting || saving || loadingPoints}
                 >
                     {submitting ? "Submitting…" : "Submit Audit"}
                 </button>

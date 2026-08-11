@@ -15,6 +15,7 @@ import Stores from "./components/Admin/StoresPage/Store";
 import AuditPoint from "./components/Admin/AuditPoints/AuditPoints";
 import HomePage from "./components/Admin/HomePage/HomePage";
 import Login from "./components/Login/Login";
+import Reports from "./components/Admin/Reports/Reports";
 
 import AuditDetails from './components/Employee/Audit/AuditDetails'
 import AuditForm from "./components/Employee/Audit/AuditForm";
@@ -106,7 +107,7 @@ function AppShell() {
 
 {/* ----------------------------------  Ops Manager   ---------------------------------------------------- */}
 
-            <Route element={<ProtectedRoute allowedRoles={[1,2]} />}>
+            <Route element={<ProtectedRoute allowedRoles={[1,2,5,4]} />}>
             
                         <Route
                                 path="/audit-points"
@@ -117,7 +118,7 @@ function AppShell() {
 
 {/* ---------------------------------- Auditor ------------------------------------------------------- */}
 
-            <Route element={<ProtectedRoute allowedRoles={[1,3]} />}>
+            <Route element={<ProtectedRoute allowedRoles={[1,2,3,4,5]} />}>
                     
                     <Route 
                         path="/audit" 
@@ -132,7 +133,7 @@ function AppShell() {
             </Route>
 
             
-            <Route element={<ProtectedRoute allowedRoles={[1,2,3]} />}>
+          <Route element={<ProtectedRoute allowedRoles={[1,2,3,4,5]} />}>
 
                     <Route
                         path="/Audits"
@@ -142,6 +143,11 @@ function AppShell() {
                     <Route
                         path="/Audits/:id"
                         element={<AuditView />}
+                    />
+
+                    <Route
+                        path="/Reports"
+                        element={<Reports />}
                     />
 
             </Route>

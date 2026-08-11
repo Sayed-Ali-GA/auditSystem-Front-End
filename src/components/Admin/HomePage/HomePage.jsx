@@ -126,30 +126,47 @@ const HomePage = () => {
         getOpsManagers();
     }, []);
 
-    const roleName = {
-        1: "Admin",
-        2: "Ops Manager",
-        3: "Auditor",
-    }[currentUser?.RoleID];
+    
+const roleName = {
+    1: "Admin",
+    2: "Ops Manager",
+    3: "Store Manager",
+    4: "Auditor",
+    5: "Audit Manager",
+}[currentUser?.RoleID];
 
 
-            const heroMessage = {
-            1: {
-                title: `Welcome back, ${currentUser?.UserName}`,
-                description:
-                    "Manage users, stores, brands, locations, and audit settings from one centralized dashboard.",
-            },
-            2: {
-                title: `Welcome back, ${currentUser?.UserName}`,
-                description:
-                    "Monitor audit points, oversee store performance, and ensure operational excellence across your assigned locations.",
-            },
-            3: {
-                title: `Welcome back, ${currentUser?.UserName}`,
-                description:
-                    "Start your assigned audits, record observations, and submit accurate audit reports efficiently.",
-            },
-        };
+          const heroMessage = {
+                1: {
+                    title: `Welcome back, ${currentUser?.UserName}`,
+                    description:
+                        "Manage users, stores, brands, locations, and audit settings from one centralized dashboard.",
+                },
+
+                2: {
+                    title: `Welcome back, ${currentUser?.UserName}`,
+                    description:
+                        "Monitor audit points, oversee store performance, and ensure operational excellence across your assigned locations.",
+                },
+
+                3: {
+                    title: `Welcome back, ${currentUser?.UserName}`,
+                    description:
+                        "Review store operations and monitor audit activities related to your assigned stores.",
+                },
+
+                4: {
+                    title: `Welcome back, ${currentUser?.UserName}`,
+                    description:
+                        "Start your assigned audits, record observations, and submit accurate audit reports efficiently.",
+                },
+
+                5: {
+                    title: `Welcome back, ${currentUser?.UserName}`,
+                    description:
+                        "Review submitted audits, manage findings, and ensure audit reports are properly completed.",
+                },
+            };
 
         const hero = heroMessage[currentUser?.RoleID];
 
@@ -218,23 +235,25 @@ const HomePage = () => {
                             <div className="ag-stat-value">{users.length}</div>
                         </Link>
                     </>
-                )}
+                )} 
 
-                {(currentUser?.RoleID === 1 || currentUser?.RoleID === 2) && (
-                    <Link to="/audit-points" className="ag-stat-card">
+
+               
+                    <Link to="/Audits" className="ag-stat-card">
                         <div className="ag-stat-icon"><FiClipboard /></div>
                         <h3>Audit</h3>
                         <div className="ag-stat-value">{auditPoint.length}</div>
                     </Link>
-                )}
+                
 
-                {currentUser?.RoleID === 3 && (
                     <Link to="/audit" className="ag-stat-card">
-                        <div className="ag-stat-icon"><FiPlayCircle /></div>
+                        <div className="ag-stat-icon">
+                            <FiPlayCircle />
+                        </div>
                         <h3>Start Audit</h3>
                         <div className="ag-stat-value">Open</div>
                     </Link>
-                )}
+                
 
             </div>
 
