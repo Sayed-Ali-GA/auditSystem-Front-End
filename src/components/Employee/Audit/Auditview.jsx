@@ -133,24 +133,37 @@ const AuditView = () => {
   const [showRejectBox, setShowRejectBox] = useState(false);
 
   const [opsCommentInput, setOpsCommentInput] = useState("");
-
+  const [auditManagerNoteInput, setAuditManagerNoteInput] = useState(""); 
+  
+  
   const loadAudit = async () => {
     try {
-      setLoading(true);
-      setError("");
+        setLoading(true);
+        setError("");
 
-      const data = await auditServices.show(id);
+        const data = await auditServices.show(id);
 
-      setAudit(data);
-      setDraftEvaluations(Array.isArray(data.evaluations) ? data.evaluations : []);
-      setOpsCommentInput(data.actionnote ?? "");
+        setAudit(data);
+
+        setDraftEvaluations(
+            Array.isArray(data.evaluations)
+                ? data.evaluations
+                : []
+        );
+
+        setOpsCommentInput(data.actionnote ?? "");
+
+        setAuditManagerNoteInput(
+            data.auditmanagernote ?? ""
+        );
+
     } catch (err) {
-      console.error("Load Audit Error:", err);
-      setError(err.message || "Could not load this audit.");
+        console.error("Load Audit Error:", err);
+        setError(err.message || "Could not load this audit.");
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   useEffect(() => {
     loadAudit();
@@ -206,8 +219,14 @@ const AuditView = () => {
   };
 
   const approveAndForward = () => {
-    runUpdate({ status: "Forwarded" }, "Approved and forwarded to Ops Manager.");
-  };
+    runUpdate(
+        {
+            auditManagerNote: auditManagerNoteInput.trim(),
+            status: "Forwarded"
+        },
+        "Approved and forwarded to Ops Manager."
+    );
+};
 
   /* -------------------- AUDITOR -------------------- */
   const saveDraft = () => {
@@ -366,6 +385,18 @@ const AuditView = () => {
           </div>
         )}
 
+        {audit.auditmanagernote && (
+    <div style={{ marginTop: 14 }}>
+        <span className="audit-note-label">
+            Audit Manager Comment
+        </span>
+
+        <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+            {audit.auditmanagernote}
+        </p>
+    </div>
+)}
+
         {audit.revisionreason && (
           <div style={{ marginTop: 14 }}>
             <span className="audit-note-label danger">Revision Request</span>
@@ -384,6 +415,18 @@ const AuditView = () => {
       {/* ==================== AUDIT MANAGER ACTIONS ==================== */}
       {isAuditManager && status === "Submitted" && (
         <div className="audit-card no-print">
+
+          <div className="audit-field">
+    <label>Audit Manager Comment</label>
+
+    <textarea
+        value={auditManagerNoteInput}
+        onChange={(e) => setAuditManagerNoteInput(e.target.value)}
+        placeholder="Write your review comment before forwarding to Ops Manager..."
+        rows={4}
+    />
+</div>
+
           <div className="audit-actions" style={{ justifyContent: "flex-start", marginTop: 0, marginBottom: showRevisionBox || showRejectBox ? 12 : 0 }}>
             <button className="audit-btn secondary" onClick={() => { setShowRevisionBox((v) => !v); setShowRejectBox(false); setError(""); }} disabled={working}>
               <FiRotateCcw /> Request Revision

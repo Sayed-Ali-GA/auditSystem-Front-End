@@ -133,6 +133,7 @@ const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManage
                         classNamePrefix="ag-rs"
                         className="ag-select"
                         options={brandOptions}
+                        required
                         placeholder="Search brand..."
                         value={
                             brandOptions.find(
@@ -158,6 +159,7 @@ const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManage
                         className="ag-select"
                         options={locationOptions}
                         placeholder="Search location..."
+                        required
                         value={
                             locationOptions.find(
                                 (option) =>
@@ -184,6 +186,7 @@ const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManage
                         classNamePrefix="ag-rs"
                         className="ag-select"
                         options={opsManagerOptions}
+                        required
                         placeholder="Search ops managers..."
                         value={
                             opsManagerOptions.find(
@@ -211,6 +214,7 @@ const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManage
                         className="ag-select"
                         options={storeManagerOptions}
                         placeholder="Search store managers..."
+                        required
                         value={
                             storeManagerOptions.find(
                                 (option) =>
