@@ -16,6 +16,7 @@ import AuditPoint from "./components/Admin/AuditPoints/AuditPoints";
 import HomePage from "./components/Admin/HomePage/HomePage";
 import Login from "./components/Login/Login";
 import Reports from "./components/Admin/Reports/Reports";
+import MyTasks from "./components/Employee/Audit/MyTasks";
 
 import AuditDetails from './components/Employee/Audit/AuditDetails'
 import AuditForm from "./components/Employee/Audit/AuditForm";
@@ -148,6 +149,11 @@ function AppShell() {
                     <Route
                         path="/Reports"
                         element={<Reports />}
+                    />
+
+                     <Route
+                        path="/tasks"
+                        element={<MyTasks />}
                     />
 
             </Route>

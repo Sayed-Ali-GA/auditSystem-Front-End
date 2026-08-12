@@ -1,27 +1,27 @@
 const BASE_URL = `${import.meta.env.VITE_API_URL}/audit-points`;
 
-
+const authHeaders = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 const index = async () => {
   try {
-    const response = await fetch(BASE_URL);
+    const response = await fetch(BASE_URL, {
+      headers: { ...authHeaders() },
+    });
 
     if (!response.ok) {
       throw new Error("Failed to fetch audit-points");
     }
 
     const data = await response.json();
-
     return data;
-
   } catch (error) {
     console.error("Error fetching audit-points:", error);
     throw error;
   }
 };
-
-
-
 
 const create = async (AuditPointData) => {
   try {
@@ -29,6 +29,7 @@ const create = async (AuditPointData) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders(),
       },
       body: JSON.stringify(AuditPointData),
     });
@@ -38,21 +39,17 @@ const create = async (AuditPointData) => {
     }
 
     return await response.json();
-
   } catch (error) {
     console.error("Error creating Audit Point:", error);
     throw error;
   }
 };
 
-
-
-
-
 const remove = async (id) => {
   try {
     const response = await fetch(`${BASE_URL}/${id}`, {
       method: "DELETE",
+      headers: { ...authHeaders() },
     });
 
     if (!response.ok) {
@@ -66,13 +63,13 @@ const remove = async (id) => {
   }
 };
 
-
 const update = async (id, updatedData) => {
   try {
     const response = await fetch(`${BASE_URL}/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders(),
       },
       body: JSON.stringify(updatedData),
     });
@@ -93,6 +90,4 @@ export default {
   create,
   remove,
   update,
-  
 };
-

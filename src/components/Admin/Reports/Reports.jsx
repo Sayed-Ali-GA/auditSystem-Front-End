@@ -31,10 +31,12 @@ import "./Reports.css";
 /* ------------------------------------------------------------------ */
 
 const STATUS_OPTIONS = [
+  { value: "Draft", label: "Draft" },
   { value: "Submitted", label: "Submitted" },
   { value: "Needs Revision", label: "Needs Revision" },
   { value: "Rejected", label: "Rejected" },
   { value: "Forwarded", label: "Forwarded" },
+  { value: "Sent to Store", label: "Sent to Store" },
   { value: "Completed", label: "Completed" },
 ];
 
@@ -50,7 +52,13 @@ const RISK_COLORS = {
   High: "#cf222e",
 };
 
-const PENDING_STATUSES = ["submitted", "needs revision", "forwarded"];
+const PENDING_STATUSES = [
+  "draft",
+  "submitted",
+  "needs revision",
+  "forwarded",
+  "sent to store",
+];
 
 const emptyFilters = {
   dateFrom: "",
@@ -96,6 +104,15 @@ const normalizeStatus = (value) => {
   if (status === "forwarded") {
     return "Forwarded";
   }
+
+
+ if (status === "draft") {
+   return "Draft";
+ }
+
+ if (status === "sent to store" || status === "sent_to_store") {
+   return "Sent to Store";
+ }
 
   if (status === "completed" || status === "complete") {
     return "Completed";

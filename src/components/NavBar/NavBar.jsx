@@ -104,6 +104,7 @@ const NavBar = () => {
     "/stores": "Stores",
     "/audit-points": "Audit Points",
     "/audit": "New Audit",
+    "/tasks": "My Tasks",
     "/Audits": "Audit History",
     "/Reports": "Reports",
   };

@@ -1,37 +1,35 @@
 const BASE_URL = `${import.meta.env.VITE_API_URL}/OpsManagers`;
 
-
+const authHeaders = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 const index = async () => {
   try {
-    const response = await fetch(BASE_URL);
+    const response = await fetch(BASE_URL, {
+      headers: { ...authHeaders() },
+    });
 
     if (!response.ok) {
       throw new Error("Failed to fetch ops managers");
     }
 
     const data = await response.json();
-
     return data;
-
   } catch (error) {
     console.error("Error fetching ops managers:", error);
     throw error;
   }
 };
 
-
-
-
-
-
-
 const create = async (opsManagerData) => {
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/OpsManagers`, {
+    const response = await fetch(BASE_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders(),
       },
       body: JSON.stringify(opsManagerData),
     });
@@ -41,20 +39,17 @@ const create = async (opsManagerData) => {
     }
 
     return await response.json();
-
   } catch (error) {
     console.error("Error creating Ops Manager:", error);
     throw error;
   }
 };
 
-
-
-
 const remove = async (id) => {
   try {
     const response = await fetch(`${BASE_URL}/${id}`, {
       method: "DELETE",
+      headers: { ...authHeaders() },
     });
 
     if (!response.ok) {
@@ -68,13 +63,13 @@ const remove = async (id) => {
   }
 };
 
-
 const update = async (id, opsManagerData) => {
   try {
     const response = await fetch(`${BASE_URL}/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders(),
       },
       body: JSON.stringify(opsManagerData),
     });
@@ -88,14 +83,11 @@ const update = async (id, opsManagerData) => {
     console.error("Error updating Ops Manager:", error);
     throw error;
   }
-};  
-
+};
 
 export default {
   index,
   create,
   remove,
   update,
-  
 };
-

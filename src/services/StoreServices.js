@@ -1,35 +1,35 @@
 const BASE_URL = `${import.meta.env.VITE_API_URL}/Stores`;
 
+const authHeaders = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 const index = async () => {
   try {
-    const response = await fetch(BASE_URL);
+    const response = await fetch(BASE_URL, {
+      headers: { ...authHeaders() },
+    });
 
     if (!response.ok) {
       throw new Error("Failed to fetch Store ");
     }
 
     const data = await response.json();
-
     return data;
-
   } catch (error) {
     console.error("Error fetching Store :", error);
     throw error;
   }
 };
 
-
-
-
-
-
 const create = async (storeData) => {
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/Stores`, {
+    const response = await fetch(BASE_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders(),
       },
       body: JSON.stringify(storeData),
     });
@@ -39,20 +39,17 @@ const create = async (storeData) => {
     }
 
     return await response.json();
-
   } catch (error) {
     console.error("Error creating Store: ", error);
     throw error;
   }
 };
 
-
-
-
 const remove = async (id) => {
   try {
     const response = await fetch(`${BASE_URL}/${id}`, {
       method: "DELETE",
+      headers: { ...authHeaders() },
     });
 
     if (!response.ok) {
@@ -66,13 +63,13 @@ const remove = async (id) => {
   }
 };
 
-
 const update = async (id, storeData) => {
   try {
     const response = await fetch(`${BASE_URL}/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        ...authHeaders(),
       },
       body: JSON.stringify(storeData),
     });
@@ -88,10 +85,9 @@ const update = async (id, storeData) => {
   }
 };
 
-
 export default {
   index,
   create,
   remove,
-  update
+  update,
 };

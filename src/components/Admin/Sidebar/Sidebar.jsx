@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
     FiHome,
@@ -12,6 +12,8 @@ import {
     FiClipboard,
     FiArchive,
     FiBarChart2,
+    FiInbox,
+    FiPlayCircle,
     FiLogOut,
     FiMenu,
     FiChevronsLeft,
@@ -19,6 +21,8 @@ import {
 } from "react-icons/fi";
 
 import { useAuth } from "../../../components/Authcontext/Authcontext";
+import auditServices from "../../../services/AuditorServices";
+import { filterMyTaskAudits } from "../../../utils/auditWorkflow";
 import "./Sidebar.css";
 
 const Sidebar = () => {
@@ -27,13 +31,38 @@ const Sidebar = () => {
 
     const [collapsed, setCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [pendingCount, setPendingCount] = useState(0);
 
     const handleLogout = () => {
         logout();
         navigate("/login", { replace: true });
     };
 
-const menus = {
+    useEffect(() => {
+        if (!user) return;
+
+        let active = true;
+
+        const loadPending = async () => {
+            try {
+                const data = await auditServices.index();
+                if (!active) return;
+                setPendingCount(filterMyTaskAudits(data, user).length);
+            } catch (error) {
+                console.log(error);
+            }
+        };
+
+        loadPending();
+        const interval = setInterval(loadPending, 30000);
+
+        return () => {
+            active = false;
+            clearInterval(interval);
+        };
+    }, [user]);
+
+    const menus = {
         admin: [
             { name: "Users", path: "/users", icon: <FiUsers /> },
             { name: "Brands", path: "/brands", icon: <FiTag /> },
@@ -43,26 +72,31 @@ const menus = {
             { name: "Store Managers", path: "/storemanagers", icon: <FiUser /> },
             { name: "Stores", path: "/stores", icon: <FiShoppingBag /> },
             { name: "Audit Point", path: "/audit-points", icon: <FiClipboard /> },
+            { name: "My Tasks", path: "/tasks", icon: <FiInbox />, badge: true },
             { name: "Audits", path: "/Audits", icon: <FiArchive /> },
             { name: "Reports", path: "/Reports", icon: <FiBarChart2 /> },
         ],
         opsManager: [
             { name: "Audit Point", path: "/audit-points", icon: <FiClipboard /> },
+            { name: "My Tasks", path: "/tasks", icon: <FiInbox />, badge: true },
             { name: "Audits", path: "/Audits", icon: <FiArchive /> },
             { name: "Reports", path: "/Reports", icon: <FiBarChart2 /> },
         ],
         auditor: [
-            { name: "Audit", path: "/audit", icon: <FiClipboard /> },
+            { name: "Start Audit", path: "/audit", icon: <FiPlayCircle /> },
+            { name: "Audit Point", path: "/audit-points", icon: <FiClipboard /> },
+            { name: "My Tasks", path: "/tasks", icon: <FiInbox />, badge: true },
             { name: "Past Audits", path: "/Audits", icon: <FiArchive /> },
             { name: "Reports", path: "/Reports", icon: <FiBarChart2 /> },
         ],
         storeManager: [
-            { name: "Audit Point", path: "/audit-points", icon: <FiClipboard /> },
+            { name: "My Tasks", path: "/tasks", icon: <FiInbox />, badge: true },
             { name: "Audits", path: "/Audits", icon: <FiArchive /> },
             { name: "Reports", path: "/Reports", icon: <FiBarChart2 /> },
         ],
         auditManager: [
             { name: "Audit Point", path: "/audit-points", icon: <FiClipboard /> },
+            { name: "My Tasks", path: "/tasks", icon: <FiInbox />, badge: true },
             { name: "Audits", path: "/Audits", icon: <FiArchive /> },
             { name: "Reports", path: "/Reports", icon: <FiBarChart2 /> },
         ],
@@ -138,6 +172,11 @@ const menus = {
                         >
                             {item.icon}
                             <span>{item.name}</span>
+                            {item.badge && pendingCount > 0 && (
+                                <span className="ag-sidebar-badge">
+                                    {pendingCount > 9 ? "9+" : pendingCount}
+                                </span>
+                            )}
                         </NavLink>
                     ))}
                 </nav>

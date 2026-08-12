@@ -25,12 +25,15 @@ const STATUS_FILTERS = [
   "Needs Revision",
   "Rejected",
   "Forwarded",
+  "Sent to Store",
   "Completed",
 ];
 
 const AuditsList = () => {
   const { user } = useAuth();
-  const canDelete = user?.RoleID === 1;
+  const roleId = Number(user?.RoleID ?? user?.roleid);
+  const canDelete = roleId === 1;
+  const canCreateAudit = [1, 4, 5].includes(roleId);
 
   const [searchParams] = useSearchParams();
   const storeFilter = searchParams.get("store");
@@ -101,6 +104,7 @@ const AuditsList = () => {
       case "Needs Revision": return "needs-revision";
       case "Rejected": return "rejected";
       case "Forwarded": return "forwarded";
+      case "Sent to Store": return "sent-to-store";
       case "Completed": return "completed";
       default: return "";
     }
@@ -129,9 +133,14 @@ const AuditsList = () => {
               Clear Filter
             </Link>
           )}
-          <Link to="/audit" className="audit-btn">
-            + New Audit
-          </Link>
+
+
+            {canCreateAudit && (
+            <Link to="/audit" className="audit-btn">
+              + New Audit
+            </Link>
+          )}
+          
         </div>
       </div>
 

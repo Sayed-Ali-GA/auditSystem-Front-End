@@ -9,6 +9,7 @@ import {
     FiUsers,
     FiClipboard,
     FiPlayCircle,
+    FiInbox,
     FiAward,
 } from "react-icons/fi";
 
@@ -19,8 +20,10 @@ import brandService from "../../../services/BrandServices";
 import locationServices from "../../../services/locationServices";
 import OpsManagerServices from "../../../services/OpsManagerServices";
 import storeManagerServices from "../../../services/StoreManagerServices";
-import AuditPointsServices from "../../../services/AuditPointsServices";
 import usersServices from "../../../services/UserServices";
+import auditServices from "../../../services/AuditorServices";
+
+import { filterMyTaskAudits } from "../../../utils/auditWorkflow";
 
 import LoadingState from "../Shared/LoadingState";
 import "../Shared/theme.css";
@@ -30,7 +33,7 @@ const HomePage = () => {
 
     const { user: currentUser } = useAuth();
 
-    const [auditPoint, setAuditPoint] = useState([]);
+    const [audits, setAudits] = useState([]);
     const [stores, setStores] = useState([]);
     const [brands, setBrands] = useState([]);
     const [locations, setLocations] = useState([]);
@@ -40,6 +43,8 @@ const HomePage = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (currentUser?.RoleID !== 1) return;
+
         const getUsers = async () => {
             try {
                 const data = await usersServices.index();
@@ -49,10 +54,12 @@ const HomePage = () => {
             }
         };
         getUsers();
-    }, []);
+    }, [currentUser?.RoleID]);
 
 
     useEffect(() => {
+        if (currentUser?.RoleID !== 1) return;
+
         const getStoreManagers = async () => {
             try {
                 const data = await storeManagerServices.index();
@@ -62,19 +69,19 @@ const HomePage = () => {
             }
         };
         getStoreManagers();
-    }, []);
+    }, [currentUser?.RoleID]);
 
     useEffect(() => {
-        const getAuditPoints = async () => {
+        const getAudits = async () => {
             try {
-                const data = await AuditPointsServices.index();
-                setAuditPoint(data);
+                const data = await auditServices.index();
+                setAudits(Array.isArray(data) ? data : []);
             } catch (error) {
                 console.log(error);
             }
         };
-        getAuditPoints();
-    }, []);
+        if (currentUser) getAudits();
+    }, [currentUser]);
 
     useEffect(() => {
         const getStores = async () => {
@@ -91,6 +98,8 @@ const HomePage = () => {
     }, []);
 
     useEffect(() => {
+        if (currentUser?.RoleID !== 1) return;
+
         const getBrands = async () => {
             try {
                 const data = await brandService.index();
@@ -100,9 +109,11 @@ const HomePage = () => {
             }
         };
         getBrands();
-    }, []);
+    }, [currentUser?.RoleID]);
 
     useEffect(() => {
+        if (currentUser?.RoleID !== 1) return;
+
         const getLocations = async () => {
             try {
                 const data = await locationServices.index();
@@ -112,9 +123,11 @@ const HomePage = () => {
             }
         };
         getLocations();
-    }, []);
+    }, [currentUser?.RoleID]);
 
     useEffect(() => {
+        if (currentUser?.RoleID !== 1) return;
+
         const getOpsManagers = async () => {
             try {
                 const data = await OpsManagerServices.index();
@@ -124,53 +137,49 @@ const HomePage = () => {
             }
         };
         getOpsManagers();
-    }, []);
-
-    
-const roleName = {
-    1: "Admin",
-    2: "Ops Manager",
-    3: "Store Manager",
-    4: "Auditor",
-    5: "Audit Manager",
-}[currentUser?.RoleID];
+    }, [currentUser?.RoleID]);
 
 
-          const heroMessage = {
-                1: {
-                    title: `Welcome back, ${currentUser?.UserName}`,
-                    description:
-                        "Manage users, stores, brands, locations, and audit settings from one centralized dashboard.",
-                },
-
-                2: {
-                    title: `Welcome back, ${currentUser?.UserName}`,
-                    description:
-                        "Monitor audit points, oversee store performance, and ensure operational excellence across your assigned locations.",
-                },
-
-                3: {
-                    title: `Welcome back, ${currentUser?.UserName}`,
-                    description:
-                        "Review store operations and monitor audit activities related to your assigned stores.",
-                },
-
-                4: {
-                    title: `Welcome back, ${currentUser?.UserName}`,
-                    description:
-                        "Start your assigned audits, record observations, and submit accurate audit reports efficiently.",
-                },
-
-                5: {
-                    title: `Welcome back, ${currentUser?.UserName}`,
-                    description:
-                        "Review submitted audits, manage findings, and ensure audit reports are properly completed.",
-                },
-            };
-
-        const hero = heroMessage[currentUser?.RoleID];
+    const roleName = {
+        1: "Admin",
+        2: "Ops Manager",
+        3: "Store Manager",
+        4: "Auditor",
+        5: "Audit Manager",
+    }[currentUser?.RoleID];
 
 
+    const heroMessage = {
+        1: {
+            title: `Welcome back, ${currentUser?.UserName}`,
+            description:
+                "Manage users, stores, brands, locations, and audit settings from one centralized dashboard.",
+        },
+        2: {
+            title: `Welcome back, ${currentUser?.UserName}`,
+            description:
+                "Monitor audit points, oversee store performance, and ensure operational excellence across your assigned locations.",
+        },
+        3: {
+            title: `Welcome back, ${currentUser?.UserName}`,
+            description:
+                "Review store operations and act on audit findings related to your assigned stores.",
+        },
+        4: {
+            title: `Welcome back, ${currentUser?.UserName}`,
+            description:
+                "Start your assigned audits, record observations, and submit accurate audit reports efficiently.",
+        },
+        5: {
+            title: `Welcome back, ${currentUser?.UserName}`,
+            description:
+                "Review submitted audits, manage findings, and ensure audit reports are properly completed.",
+        },
+    };
+
+    const hero = heroMessage[currentUser?.RoleID];
+
+    const pendingCount = filterMyTaskAudits(audits, currentUser).length;
 
     if (loading) {
         return (
@@ -196,6 +205,12 @@ const roleName = {
             <div className="ag-section-title">Overview</div>
 
             <div className="ag-stat-grid">
+
+                <Link to="/tasks" className="ag-stat-card">
+                    <div className="ag-stat-icon"><FiInbox /></div>
+                    <h3>My Tasks</h3>
+                    <div className="ag-stat-value">{pendingCount}</div>
+                </Link>
 
                 {currentUser?.RoleID === 1 && (
                     <>
@@ -235,17 +250,20 @@ const roleName = {
                             <div className="ag-stat-value">{users.length}</div>
                         </Link>
                     </>
-                )} 
+                )}
 
-
-               
+                {(currentUser?.RoleID === 1 ||
+                    currentUser?.RoleID === 2 ||
+                    currentUser?.RoleID === 3 ||
+                    currentUser?.RoleID === 5) && (
                     <Link to="/Audits" className="ag-stat-card">
                         <div className="ag-stat-icon"><FiClipboard /></div>
-                        <h3>Audit</h3>
-                        <div className="ag-stat-value">{auditPoint.length}</div>
+                        <h3>Audits</h3>
+                        <div className="ag-stat-value">{audits.length}</div>
                     </Link>
-                
+                )}
 
+                {currentUser?.RoleID === 4 && (
                     <Link to="/audit" className="ag-stat-card">
                         <div className="ag-stat-icon">
                             <FiPlayCircle />
@@ -253,7 +271,7 @@ const roleName = {
                         <h3>Start Audit</h3>
                         <div className="ag-stat-value">Open</div>
                     </Link>
-                
+                )}
 
             </div>
 
