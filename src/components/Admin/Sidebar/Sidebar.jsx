@@ -84,7 +84,6 @@ const Sidebar = () => {
         ],
         auditor: [
             { name: "Start Audit", path: "/audit", icon: <FiPlayCircle /> },
-            { name: "Audit Point", path: "/audit-points", icon: <FiClipboard /> },
             { name: "My Tasks", path: "/tasks", icon: <FiInbox />, badge: true },
             { name: "Past Audits", path: "/Audits", icon: <FiArchive /> },
             { name: "Reports", path: "/Reports", icon: <FiBarChart2 /> },
