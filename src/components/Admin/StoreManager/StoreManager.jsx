@@ -19,6 +19,9 @@ import StoreManagerForm from "./StoreManagerForm";
 import PageHeader from "../Shared/PageHeader";
 import LoadingState from "../Shared/LoadingState";
 import Modal from "../Shared/Modal";
+import { useNavigate } from "react-router-dom";
+import { FiUserPlus } from "react-icons/fi";
+import userService from "../../../services/UserServices";
 
 import "../Shared/theme.css";
 
@@ -61,6 +64,31 @@ const StoreManagers = () => {
       setLoading(false);
     }
   };
+
+
+const navigate = useNavigate();
+const [linkedOracleIds, setLinkedOracleIds] = useState(new Set());
+
+useEffect(() => {
+  const loadUsers = async () => {
+    try {
+      const data = await userService.index();
+      setLinkedOracleIds(new Set(data.map((u) => Number(u.oracleid))));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  loadUsers();
+}, []);
+
+const handleAddToUsers = (storeManager) => {
+  navigate(
+    `/users?role=3&oracleId=${storeManager.oracleid}&userName=${encodeURIComponent(
+      storeManager.storemanagername,
+    )}&locationId=${storeManager.locationid}`,
+  );
+};
+
 
   // =====================================================
   // LOAD STORE MANAGERS WHEN ARCHIVE FILTER CHANGES
@@ -350,6 +378,8 @@ const StoreManagers = () => {
 
                 <th>Status</th>
 
+                <th>User account</th>
+
                 <th>Edit</th>
 
                 <th>Archive / Restore</th>
@@ -402,6 +432,21 @@ const StoreManagers = () => {
                         {isActive ? "Active" : "Archived"}
                       </span>
                     </td>
+
+
+                    <td data-label="User account">
+  {linkedOracleIds.has(Number(storeManager.oracleid)) ? (
+    <span className="ag-badge ag-badge-success">Linked</span>
+  ) : (
+    <button
+      type="button"
+      className="ag-btn ag-btn-ghost ag-btn-sm"
+      onClick={() => handleAddToUsers(storeManager)}
+    >
+      <FiUserPlus /> Add to Users
+    </button>
+  )}
+</td>
 
                     {/* Edit */}
                     <td data-label="Edit">

@@ -14,6 +14,9 @@ import OpsManagerForm from "./OpsManagerForm";
 
 import PageHeader from "../Shared/PageHeader";
 import LoadingState from "../Shared/LoadingState";
+import { useNavigate } from "react-router-dom";
+import { FiUserPlus } from "react-icons/fi";
+import userService from "../../../services/UserServices";
 import Modal from "../Shared/Modal";
 
 import "../Shared/theme.css";
@@ -52,6 +55,31 @@ const OpsManager = () => {
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showArchived]);
+
+
+
+  const navigate = useNavigate();
+const [linkedOracleIds, setLinkedOracleIds] = useState(new Set());
+
+useEffect(() => {
+  const loadUsers = async () => {
+    try {
+      const data = await userService.index();
+      setLinkedOracleIds(new Set(data.map((u) => Number(u.oracleid))));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  loadUsers();
+}, []);
+
+const handleAddToUsers = (opsManager) => {
+  navigate(
+    `/users?role=2&oracleId=${opsManager.oracleid}&userName=${encodeURIComponent(
+      opsManager.opsmanagername,
+    )}`,
+  );
+};
 
   // =========================
   // MODAL
@@ -250,6 +278,8 @@ const OpsManager = () => {
 
                 <th>Status</th>
 
+                <th>User account</th>
+
                 <th>Edit</th>
 
                 <th>Archive / Restore</th>
@@ -286,6 +316,21 @@ const OpsManager = () => {
                       {opsManager.isactive ? "Active" : "Archived"}
                     </span>
                   </td>
+
+
+                  <td data-label="User account">
+  {linkedOracleIds.has(Number(opsManager.oracleid)) ? (
+    <span className="ag-badge ag-badge-success">Linked</span>
+  ) : (
+    <button
+      type="button"
+      className="ag-btn ag-btn-ghost ag-btn-sm"
+      onClick={() => handleAddToUsers(opsManager)}
+    >
+      <FiUserPlus /> Add to Users
+    </button>
+  )}
+</td>
 
                   <td data-label="Edit">
                     <div className="ag-row-actions">

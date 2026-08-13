@@ -58,6 +58,19 @@ const Users = () => {
    */
   const roleFromUrl = searchParams.get("role");
 
+  const oracleIdFromUrl = searchParams.get("oracleId");
+const userNameFromUrl = searchParams.get("userName");
+const locationIdFromUrl = searchParams.get("locationId");
+
+
+useEffect(() => {
+  if (oracleIdFromUrl) {
+    setEditingUser(null);
+    setIsModalOpen(true);
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [oracleIdFromUrl]);
+
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
@@ -113,15 +126,14 @@ const Users = () => {
   // ==========================================
   // CLOSE
   // ==========================================
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditingUser(null);
+const closeModal = () => {
+  setIsModalOpen(false);
+  setEditingUser(null);
 
-    // Remove ?role=...
-    if (roleFromUrl) {
-      setSearchParams({});
-    }
-  };
+  if (roleFromUrl || oracleIdFromUrl) {
+    setSearchParams({});
+  }
+};
 
   // ==========================================
   // ADD / UPDATE
@@ -337,6 +349,14 @@ const Users = () => {
     );
   }
 
+  const prefillData = oracleIdFromUrl
+  ? {
+      oracleId: oracleIdFromUrl,
+      userName: userNameFromUrl || "",
+      role: roleFromUrl || "",
+      locationId: locationIdFromUrl ? Number(locationIdFromUrl) : null,
+    }
+  : null;
   // ==========================================
   // UI
   // ==========================================
@@ -528,13 +548,13 @@ const Users = () => {
                 : "Add new user"
         }
       >
-        <UserForm
-          editingUser={editingUser}
-          locations={locations}
-          handleAddUser={handleAddUser}
-          onCancelEdit={closeModal}
-          forcedRole={roleFromUrl}
-        />
+      <UserForm
+  editingUser={editingUser}
+  locations={locations}
+  handleAddUser={handleAddUser}
+  onCancelEdit={closeModal}
+  prefillData={prefillData}
+/>
       </Modal>
     </div>
   );

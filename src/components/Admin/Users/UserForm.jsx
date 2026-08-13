@@ -24,26 +24,38 @@ const UserForm = ({
   handleAddUser,
   onCancelEdit,
   locations = [],
+  prefillData = null,
 }) => {
+
+
+
   const [formData, setFormData] = useState(initialUser);
   const [formError, setFormError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (editingUser) {
-      setFormData({
-        OracleID: editingUser.oracleid || "",
-        UserName: editingUser.username || "",
-        Password: "",
-        LocationID: editingUser.locationid || null,
-        RoleID: editingUser.roleid || "",
-      });
-    } else {
-      setFormData(initialUser);
-    }
+useEffect(() => {
+  if (editingUser) {
+    setFormData({
+      OracleID: editingUser.oracleid || "",
+      UserName: editingUser.username || "",
+      Password: "",
+      LocationID: editingUser.locationid || null,
+      RoleID: editingUser.roleid || "",
+    });
+  } else if (prefillData) {
+    setFormData({
+      OracleID: prefillData.oracleId || "",
+      UserName: prefillData.userName || "",
+      Password: "",
+      LocationID: prefillData.locationId || null,
+      RoleID: prefillData.role || "",
+    });
+  } else {
+    setFormData(initialUser);
+  }
 
-    setFormError("");
-  }, [editingUser]);
+  setFormError("");
+}, [editingUser, prefillData]);
 
   const handleChange = (e) => {
     setFormData({
@@ -111,12 +123,13 @@ const UserForm = ({
             </label>
 
             <input
-              type="number"
-              name="OracleID"
-              value={formData.OracleID}
-              placeholder="Oracle ID"
-              onChange={handleChange}
-            />
+  type="number"
+  name="OracleID"
+  value={formData.OracleID}
+  placeholder="Oracle ID"
+  onChange={handleChange}
+  readOnly={Boolean(prefillData)}
+/>
           </div>
         )}
 
