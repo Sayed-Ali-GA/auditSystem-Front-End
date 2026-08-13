@@ -5,9 +5,10 @@ const authHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-const index = async () => {
+const index = async (includeInactive = false) => {
   try {
-    const response = await fetch(BASE_URL, {
+    const url = includeInactive ? `${BASE_URL}?includeInactive=true` : BASE_URL;
+    const response = await fetch(url, {
       headers: { ...authHeaders() },
     });
 
@@ -81,6 +82,26 @@ const update = async (id, storeData) => {
     return await response.json();
   } catch (error) {
     console.error("Error updating Store:", error);
+    throw error;
+  }
+};
+
+
+
+const restore = async (id) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${id}/restore`, {
+      method: "PATCH",
+      headers: { ...authHeaders() },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to restore Store ");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error restoring Store:", error);
     throw error;
   }
 };

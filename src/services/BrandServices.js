@@ -5,23 +5,27 @@ const authHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-const index = async () => {
-  try {
-    const response = await fetch(BASE_URL, {
-      headers: { ...authHeaders() },
-    });
+    const index = async (includeInactive = false) => {
+      try {
+        const url = includeInactive ? `${BASE_URL}?includeInactive=true` : BASE_URL;
+         const response = await fetch(url, {
+          headers: { ...authHeaders() },
+        });
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch brands");
-    }
+        if (!response.ok) {
+          throw new Error("Failed to fetch brands");
+        }
 
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching brands:", error);
-    throw error;
-  }
-};
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("Error fetching brands:", error);
+        throw error;
+      }
+    };
+
+
+
 
 const create = async (brandData) => {
   try {
@@ -100,9 +104,31 @@ const update = async (id, brandData) => {
   }
 };
 
+
+
+const restore = async (id) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${id}/restore`, {
+      method: "PATCH",
+      headers: { ...authHeaders() },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to restore brand");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error restoring brand:", error);
+    throw error;
+  }
+};
+
+
 export default {
   index,
   create,
   remove,
   update,
+  restore
 };

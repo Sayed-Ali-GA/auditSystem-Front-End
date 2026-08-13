@@ -5,9 +5,10 @@ const authHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-const index = async () => {
+const index = async (includeInactive = false) => {
   try {
-    const response = await fetch(BASE_URL, {
+    const url = includeInactive ? `${BASE_URL}?includeInactive=true` : BASE_URL;
+    const response = await fetch(url, {
       headers: { ...authHeaders() },
     });
 
@@ -85,9 +86,33 @@ const update = async (id, opsManagerData) => {
   }
 };
 
+
+
+
+
+const restore = async (id) => {
+  try {
+    const response = await fetch(`${BASE_URL}/${id}/restore`, {
+      method: "PATCH",
+      headers: { ...authHeaders() },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to restore Ops Manager");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error restoring Ops Manager:", error);
+    throw error;
+  }
+};
+
+
 export default {
   index,
   create,
   remove,
   update,
+  restore
 };

@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { FiUser, FiEdit2, FiTrash2, FiPlus, FiMail } from "react-icons/fi";
+import {
+  FiUser,
+  FiEdit2,
+  FiTrash2,
+  FiPlus,
+  FiMail,
+  FiRotateCcw,
+  FiArchive,
+} from "react-icons/fi";
 
 import storeManagerService from "../../../services/StoreManagerServices";
 import brandService from "../../../services/BrandServices";
@@ -29,76 +37,106 @@ const StoreManagers = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [showArchived, setShowArchived] = useState(false);
+
+  // =====================================================
+  // LOAD STORE MANAGERS
+  // =====================================================
+  const loadStoreManagers = async (includeInactive = false) => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const data = await storeManagerService.index(includeInactive);
+
+      console.log("Store Managers:", data);
+
+      setStoreManagers(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.log("Failed to load store managers:", error);
+
+      setError("Cannot connect to server");
+      setStoreManagers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // =====================================================
+  // LOAD STORE MANAGERS WHEN ARCHIVE FILTER CHANGES
+  // =====================================================
   useEffect(() => {
-    const getStoreManagers = async () => {
-      try {
-        const data = await storeManagerService.index();
+    loadStoreManagers(showArchived);
 
-        setStoreManagers(data);
-      } catch (error) {
-        console.log(error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showArchived]);
 
-        setError("Cannot connect to server");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getStoreManagers();
-  }, []);
-
+  // =====================================================
+  // LOAD BRANDS
+  // =====================================================
   useEffect(() => {
     const getBrands = async () => {
       try {
         const data = await brandService.index();
 
-        setBrands(data);
+        setBrands(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.log(error);
+        console.log("Failed to load brands:", error);
       }
     };
 
     getBrands();
   }, []);
 
+  // =====================================================
+  // LOAD LOCATIONS
+  // =====================================================
   useEffect(() => {
     const getLocations = async () => {
       try {
         const data = await locationServices.index();
 
-        setLocations(data);
+        setLocations(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.log(error);
+        console.log("Failed to load locations:", error);
       }
     };
 
     getLocations();
   }, []);
 
+  // =====================================================
+  // OPEN ADD MODAL
+  // =====================================================
   const openAddModal = () => {
     setEditingStoreManager(null);
-
     setIsModalOpen(true);
   };
 
+  // =====================================================
+  // OPEN EDIT MODAL
+  // =====================================================
   const openEditModal = (storeManager) => {
     setEditingStoreManager(storeManager);
-
     setIsModalOpen(true);
   };
 
+  // =====================================================
+  // CLOSE MODAL
+  // =====================================================
   const closeModal = () => {
     setIsModalOpen(false);
-
     setEditingStoreManager(null);
   };
 
+  // =====================================================
+  // ADD / UPDATE STORE MANAGER
+  // =====================================================
   const handleAddStoreManager = async (storeManagerData) => {
     try {
       if (editingStoreManager) {
         const updatedStoreManager = await storeManagerService.update(
           editingStoreManager.storemanagerid,
-
           storeManagerData,
         );
 
@@ -112,9 +150,7 @@ const StoreManagers = () => {
 
         Swal.fire({
           icon: "success",
-
           title: "Updated!",
-
           text: "Store Manager updated successfully.",
         });
       } else {
@@ -125,38 +161,35 @@ const StoreManagers = () => {
 
         Swal.fire({
           icon: "success",
-
           title: "Added!",
-
           text: "Store Manager added successfully.",
         });
       }
 
       closeModal();
     } catch (error) {
+      console.log("Failed to save Store Manager:", error);
+
       Swal.fire({
         icon: "error",
-
         title: "Error!",
-
         text: "Something went wrong.",
       });
     }
   };
 
-  const handleDeleteStoreManager = async (storemanagerid) => {
+  // =====================================================
+  // ARCHIVE STORE MANAGER
+  // =====================================================
+  const handleArchiveStoreManager = async (storemanagerid) => {
     const result = await Swal.fire({
-      title: "Are you sure?",
-
-      text: "You won't be able to undo this!",
-
+      title: "Archive this Store Manager?",
+      text: "They will be hidden from active assignments but kept for historical records.",
       icon: "warning",
-
       showCancelButton: true,
-
-      confirmButtonText: "Yes, delete it!",
-
+      confirmButtonText: "Yes, archive it!",
       cancelButtonText: "Cancel",
+      reverseButtons: true,
     });
 
     if (!result.isConfirmed) return;
@@ -164,28 +197,66 @@ const StoreManagers = () => {
     try {
       await storeManagerService.remove(storemanagerid);
 
-      setStoreManagers((prev) =>
-        prev.filter((item) => item.storemanagerid !== storemanagerid),
-      );
+      // Reload from database
+      await loadStoreManagers(showArchived);
 
       Swal.fire({
-        title: "Deleted!",
-
-        text: "The Store Manager has been deleted.",
-
+        title: "Archived!",
+        text: "The Store Manager has been archived.",
         icon: "success",
       });
     } catch (error) {
+      console.log("Failed to archive Store Manager:", error);
+
       Swal.fire({
         title: "Error!",
-
-        text: "Cannot delete this Store Manager.",
-
+        text: "Cannot archive this Store Manager.",
         icon: "error",
       });
     }
   };
 
+  // =====================================================
+  // RESTORE STORE MANAGER
+  // =====================================================
+  const handleRestoreStoreManager = async (storemanagerid) => {
+    const result = await Swal.fire({
+      title: "Restore this Store Manager?",
+      text: "They will become active again.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, restore it!",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      await storeManagerService.restore(storemanagerid);
+
+      // Reload from database
+      await loadStoreManagers(showArchived);
+
+      Swal.fire({
+        title: "Restored!",
+        text: "The Store Manager is active again.",
+        icon: "success",
+      });
+    } catch (error) {
+      console.log("Failed to restore Store Manager:", error);
+
+      Swal.fire({
+        title: "Error!",
+        text: "Could not restore this Store Manager.",
+        icon: "error",
+      });
+    }
+  };
+
+  // =====================================================
+  // LOADING
+  // =====================================================
   if (loading) {
     return (
       <div className="ag-main">
@@ -194,6 +265,9 @@ const StoreManagers = () => {
     );
   }
 
+  // =====================================================
+  // ERROR
+  // =====================================================
   if (error) {
     return (
       <div className="ag-main">
@@ -202,7 +276,7 @@ const StoreManagers = () => {
 
           <p>
             Please send an email to IT for support.
-            <a href="mailto:example.com">
+            <a href="mailto:example@example.com">
               <FiMail /> Send email
             </a>
           </p>
@@ -211,6 +285,9 @@ const StoreManagers = () => {
     );
   }
 
+  // =====================================================
+  // UI
+  // =====================================================
   return (
     <div className="ag-main">
       <PageHeader
@@ -218,16 +295,34 @@ const StoreManagers = () => {
         eyebrow="Team"
         title="Store Managers"
         subtitle="Manage store managers and their brand / location assignment."
+        actions={
+          <button
+            type="button"
+            className="ag-btn ag-btn-ghost ag-btn-sm"
+            onClick={() => setShowArchived((value) => !value)}
+          >
+            <FiArchive />
+
+            {showArchived ? "Show active only" : "Show archived"}
+          </button>
+        }
       />
 
       <div className="ag-card">
+        {/* =====================================================
+            CARD HEADER
+        ===================================================== */}
         <div className="ag-card-title-row">
           <div className="ag-card-title">
             <FiUser />
-            All store managers
+
+            {showArchived
+              ? "All store managers (incl. archived)"
+              : "Active store managers"}
           </div>
 
           <button
+            type="button"
             className="ag-btn ag-btn-primary ag-btn-sm"
             onClick={openAddModal}
           >
@@ -236,6 +331,9 @@ const StoreManagers = () => {
           </button>
         </div>
 
+        {/* =====================================================
+            TABLE
+        ===================================================== */}
         <div className="ag-table-wrap">
           <table className="ag-table">
             <thead>
@@ -250,65 +348,118 @@ const StoreManagers = () => {
 
                 <th>Location</th>
 
+                <th>Status</th>
+
                 <th>Edit</th>
 
-                <th>Delete</th>
+                <th>Archive / Restore</th>
               </tr>
             </thead>
 
             <tbody>
               {storeManagers.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="ag-empty-state">
-                    No store managers yet.
+                  <td colSpan={8} className="ag-empty-state">
+                    {showArchived
+                      ? "No store managers found."
+                      : "No active store managers yet."}
                   </td>
                 </tr>
               )}
 
-              {storeManagers.map((storeManager, index) => (
-                <tr key={storeManager.storemanagerid}>
-                  <td>{index + 1}</td>
+              {storeManagers.map((storeManager, index) => {
+      
+                const isActive =
+                  storeManager.isactive === true ||
+                  storeManager.isactive === "true" ||
+                  storeManager.isactive === 1 ||
+                  storeManager.isactive === "1";
 
-                  <td>{storeManager.storemanagername}</td>
+                return (
+                  <tr key={storeManager.storemanagerid}>
+                    {/* Sl. No. */}
+                    <td data-label="Sl. No.">{index + 1}</td>
 
-                  <td>{storeManager.oracleid}</td>
+                    {/* Name */}
+                    <td data-label="Name">{storeManager.storemanagername}</td>
 
-                  <td>{storeManager.brandname}</td>
+                    {/* Oracle ID */}
+                    <td data-label="Oracle ID">{storeManager.oracleid}</td>
 
-                  <td>{storeManager.locationname}</td>
+                    {/* Brand */}
+                    <td data-label="Brand">{storeManager.brandname}</td>
 
-                  <td>
-                    <div className="ag-row-actions">
-                      <button
-                        className="ag-icon-btn edit"
-                        title="Edit"
-                        onClick={() => openEditModal(storeManager)}
+                    {/* Location */}
+                    <td data-label="Location">{storeManager.locationname}</td>
+
+                    {/* Status */}
+                    <td data-label="Status">
+                      <span
+                        className={`ag-badge ${
+                          isActive ? "ag-badge-success" : "ag-badge-muted"
+                        }`}
                       >
-                        <FiEdit2 />
-                      </button>
-                    </div>
-                  </td>
+                        {isActive ? "Active" : "Archived"}
+                      </span>
+                    </td>
 
-                  <td>
-                    <div className="ag-row-actions">
-                      <button
-                        className="ag-icon-btn delete"
-                        title="Delete"
-                        onClick={() =>
-                          handleDeleteStoreManager(storeManager.storemanagerid)
-                        }
-                      >
-                        <FiTrash2 />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    {/* Edit */}
+                    <td data-label="Edit">
+                      <div className="ag-row-actions">
+                        <button
+                          type="button"
+                          className="ag-icon-btn edit"
+                          title="Edit"
+                          onClick={() => openEditModal(storeManager)}
+                        >
+                          <FiEdit2 />
+                        </button>
+                      </div>
+                    </td>
+
+                    {/* Archive / Restore */}
+                    <td data-label="Archive / Restore">
+                      <div className="ag-row-actions">
+                        {isActive ? (
+                          <button
+                            type="button"
+                            className="ag-icon-btn delete"
+                            title="Archive"
+                            onClick={() =>
+                              handleArchiveStoreManager(
+                                storeManager.storemanagerid,
+                              )
+                            }
+                          >
+                            <FiTrash2 />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="ag-icon-btn enable"
+                            title="Restore"
+                            onClick={() =>
+                              handleRestoreStoreManager(
+                                storeManager.storemanagerid,
+                              )
+                            }
+                          >
+                            <FiRotateCcw />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
 
+      {/* =====================================================
+          MODAL
+      ===================================================== */}
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}

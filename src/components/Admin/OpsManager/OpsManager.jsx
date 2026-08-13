@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { FiUserCheck, FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
+import {
+  FiUserCheck,
+  FiEdit2,
+  FiTrash2,
+  FiPlus,
+  FiRotateCcw,
+  FiArchive,
+} from "react-icons/fi";
 
 import OpsManagerService from "../../../services/OpsManagerServices";
 import OpsManagerForm from "./OpsManagerForm";
@@ -21,46 +28,57 @@ const OpsManager = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [showArchived, setShowArchived] = useState(false);
+
+  // =========================
+  // LOAD OPS MANAGERS
+  // =========================
+  const loadOpsManagers = async (includeInactive) => {
+    try {
+      setLoading(true);
+
+      const data = await OpsManagerService.index(includeInactive);
+
+      setOpsManagers(data);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const getOpsManagers = async () => {
-      try {
-        const data = await OpsManagerService.index();
+    loadOpsManagers(showArchived);
 
-        setOpsManagers(data);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showArchived]);
 
-    getOpsManagers();
-  }, []);
-
+  // =========================
+  // MODAL
+  // =========================
   const openAddModal = () => {
     setEditingOpsManager(null);
-
     setIsModalOpen(true);
   };
 
   const openEditModal = (opsManager) => {
     setEditingOpsManager(opsManager);
-
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-
     setEditingOpsManager(null);
   };
 
+  // =========================
+  // ADD / UPDATE
+  // =========================
   const handleAddOpsManager = async (opsManagerData) => {
     try {
       if (editingOpsManager) {
         const updatedOpsManager = await OpsManagerService.update(
           editingOpsManager.opsmanagerid,
-
           opsManagerData,
         );
 
@@ -74,9 +92,7 @@ const OpsManager = () => {
 
         Swal.fire({
           icon: "success",
-
           title: "Updated!",
-
           text: "Ops Manager updated successfully.",
         });
       } else {
@@ -86,37 +102,33 @@ const OpsManager = () => {
 
         Swal.fire({
           icon: "success",
-
           title: "Added!",
-
           text: "Ops Manager added successfully.",
         });
       }
 
       closeModal();
     } catch (error) {
+      console.log(error);
+
       Swal.fire({
         icon: "error",
-
         title: "Error!",
-
         text: "Something went wrong.",
       });
     }
   };
 
-  const handleDeleteOpsManager = async (opsmanagerid) => {
+  // =========================
+  // ARCHIVE
+  // =========================
+  const handleArchiveOpsManager = async (opsmanagerid) => {
     const result = await Swal.fire({
-      title: "Are you sure?",
-
-      text: "You won't be able to undo this!",
-
+      title: "Archive this Ops Manager?",
+      text: "They will be hidden from active assignments but kept for historical records.",
       icon: "warning",
-
       showCancelButton: true,
-
-      confirmButtonText: "Yes, delete it!",
-
+      confirmButtonText: "Yes, archive it!",
       cancelButtonText: "Cancel",
     });
 
@@ -130,23 +142,51 @@ const OpsManager = () => {
       );
 
       Swal.fire({
-        title: "Deleted!",
-
-        text: "The Ops Manager has been deleted.",
-
+        title: "Archived!",
+        text: "The Ops Manager has been archived.",
         icon: "success",
       });
     } catch (error) {
+      console.log(error);
+
       Swal.fire({
         title: "Error!",
-
-        text: "This Ops Manager is assigned to one or more.",
-
+        text: "Could not archive this Ops Manager.",
         icon: "error",
       });
     }
   };
 
+  // =========================
+  // RESTORE
+  // =========================
+  const handleRestoreOpsManager = async (opsmanagerid) => {
+    try {
+      await OpsManagerService.restore(opsmanagerid);
+
+      setOpsManagers((prev) =>
+        prev.filter((item) => item.opsmanagerid !== opsmanagerid),
+      );
+
+      Swal.fire({
+        title: "Restored!",
+        text: "The Ops Manager is active again.",
+        icon: "success",
+      });
+    } catch (error) {
+      console.log(error);
+
+      Swal.fire({
+        title: "Error!",
+        text: "Could not restore this Ops Manager.",
+        icon: "error",
+      });
+    }
+  };
+
+  // =========================
+  // LOADING
+  // =========================
   if (loading) {
     return (
       <div className="ag-main">
@@ -155,6 +195,9 @@ const OpsManager = () => {
     );
   }
 
+  // =========================
+  // UI
+  // =========================
   return (
     <div className="ag-main">
       <PageHeader
@@ -162,13 +205,27 @@ const OpsManager = () => {
         eyebrow="Team"
         title="Ops Managers"
         subtitle="Manage operations managers assigned to stores."
+        actions={
+          <button
+            type="button"
+            className="ag-btn ag-btn-ghost ag-btn-sm"
+            onClick={() => setShowArchived((v) => !v)}
+          >
+            <FiArchive />
+
+            {showArchived ? "Show active only" : "Show archived"}
+          </button>
+        }
       />
 
       <div className="ag-card">
         <div className="ag-card-title-row">
           <div className="ag-card-title">
             <FiUserCheck />
-            All ops managers
+
+            {showArchived
+              ? "All ops managers (incl. archived)"
+              : "Active ops managers"}
           </div>
 
           <button
@@ -191,30 +248,46 @@ const OpsManager = () => {
 
                 <th>Oracle ID</th>
 
+                <th>Status</th>
+
                 <th>Edit</th>
 
-                <th>Delete</th>
+                <th>Archive / Restore</th>
               </tr>
             </thead>
 
             <tbody>
               {opsManagers.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="ag-empty-state">
-                    No ops managers yet.
+                  <td colSpan={6} className="ag-empty-state">
+                    {showArchived
+                      ? "No Ops Managers found."
+                      : "No active Ops Managers yet."}
                   </td>
                 </tr>
               )}
 
               {opsManagers.map((opsManager, index) => (
                 <tr key={opsManager.opsmanagerid}>
-                  <td>{index + 1}</td>
+                  <td data-label="Sl. No.">{index + 1}</td>
 
-                  <td>{opsManager.opsmanagername}</td>
+                  <td data-label="Name">{opsManager.opsmanagername}</td>
 
-                  <td>{opsManager.oracleid}</td>
+                  <td data-label="Oracle ID">{opsManager.oracleid}</td>
 
-                  <td>
+                  <td data-label="Status">
+                    <span
+                      className={`ag-badge ${
+                        opsManager.isactive
+                          ? "ag-badge-success"
+                          : "ag-badge-muted"
+                      }`}
+                    >
+                      {opsManager.isactive ? "Active" : "Archived"}
+                    </span>
+                  </td>
+
+                  <td data-label="Edit">
                     <div className="ag-row-actions">
                       <button
                         className="ag-icon-btn edit"
@@ -226,17 +299,29 @@ const OpsManager = () => {
                     </div>
                   </td>
 
-                  <td>
+                  <td data-label="Archive / Restore">
                     <div className="ag-row-actions">
-                      <button
-                        className="ag-icon-btn delete"
-                        title="Delete"
-                        onClick={() =>
-                          handleDeleteOpsManager(opsManager.opsmanagerid)
-                        }
-                      >
-                        <FiTrash2 />
-                      </button>
+                      {opsManager.isactive ? (
+                        <button
+                          className="ag-icon-btn delete"
+                          title="Archive"
+                          onClick={() =>
+                            handleArchiveOpsManager(opsManager.opsmanagerid)
+                          }
+                        >
+                          <FiTrash2 />
+                        </button>
+                      ) : (
+                        <button
+                          className="ag-icon-btn enable"
+                          title="Restore"
+                          onClick={() =>
+                            handleRestoreOpsManager(opsManager.opsmanagerid)
+                          }
+                        >
+                          <FiRotateCcw />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
