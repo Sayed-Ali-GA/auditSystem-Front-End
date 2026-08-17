@@ -2,13 +2,7 @@ import { useEffect } from "react";
 import { FiX } from "react-icons/fi";
 import "./Modal.css";
 
-/**
- * Shared modal for add/edit forms across the admin console.
- *
- * <Modal isOpen={open} onClose={close} icon={<FiTag />} title="Add brand">
- *   <BrandForm ... />
- * </Modal>
- */
+
 const Modal = ({ isOpen, onClose, title, icon, children, maxWidth = 1400 }) => {
   useEffect(() => {
     if (!isOpen) return;

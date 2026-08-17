@@ -30,6 +30,18 @@ const WORKFLOW_STEPS = [
   { key: "Completed", label: "Completed" },
 ];
 
+const BHD_DENOMINATIONS = [
+  { key: "20", label: "20", value: 20 },
+  { key: "10", label: "10", value: 10 },
+  { key: "5", label: "5", value: 5 },
+  { key: "1", label: "1", value: 1 },
+  { key: "0.500", label: ".500", value: 0.5 },
+  { key: "0.100", label: "0.100", value: 0.1 },
+  { key: "0.050", label: "0.050", value: 0.05 },
+  { key: "0.025", label: "0.025", value: 0.025 },
+  { key: "0.010", label: "0.010", value: 0.01 },
+];
+
 const scoreFromRating = (rating) => {
   if (rating === "S.V") return { score: 2, percentage: 100 };
   if (rating === "NI") return { score: 1, percentage: 50 };
@@ -64,9 +76,9 @@ const formatDateDisplay = (value) => {
 };
 
 const getRatingLabel = (risk) => {
-  if (risk === "Low") return "Excellent";
-  if (risk === "Moderate") return "Needs Improvement";
-  if (risk === "High") return "Critical";
+  if (risk === "Low") return "SATISFACTORY";
+  if (risk === "Moderate") return "NEEDS IMPROVEMENT";
+  if (risk === "High") return "UNSATISFACTORY";
   return "-";
 };
 
@@ -291,6 +303,7 @@ const AuditView = () => {
 
   const reportSections = buildReportSections(draftEvaluations);
   const ratingLabel = getRatingLabel(audit.risklevel);
+  const cc = audit.cashcount;
 
   return (
     <div className="audit-page">
@@ -411,6 +424,31 @@ const AuditView = () => {
           </div>
         )}
       </div>
+
+      {/* ==================== CASH COUNT (READ-ONLY) ==================== */}
+      {cc && (
+        <div className="audit-card no-print">
+          <div className="audit-card-title" style={{ fontWeight: 700, marginBottom: 10 }}>
+            Cash Count (BHD)
+          </div>
+          <div className="audit-store-summary">
+            <div className="audit-store-item">
+              <span>Tills Float</span>
+              <strong>{Number(cc.tillFloat || 0).toFixed(3)}</strong>
+            </div>
+            <div className="audit-store-item">
+              <span>Sale Cash (report)</span>
+              <strong>{Number(cc.saleCashPerReport || 0).toFixed(3)}</strong>
+            </div>
+            {cc.remarks && (
+              <div className="audit-store-item">
+                <span>Remarks</span>
+                <strong>{cc.remarks}</strong>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ==================== AUDIT MANAGER ACTIONS ==================== */}
       {isAuditManager && status === "Submitted" && (
@@ -673,8 +711,8 @@ const AuditView = () => {
                 {section.subsections.map((sub) => (
                   <React.Fragment key={sub.number}>
                     <tr className="audit-print-sub-row">
-                      <td>{sub.number}</td>
-                      <td colSpan={8}>{sub.name}</td>
+                      {/* <td>{sub.number}</td> */}
+                      {/* <td colSpan={8}>{sub.name}</td> */}
                     </tr>
 
                     {sub.items.map((item) => {
@@ -704,6 +742,53 @@ const AuditView = () => {
             ))}
           </tbody>
         </table>
+
+        {cc && (
+          <table className="audit-print-meta" style={{ marginTop: 16 }}>
+            <tbody>
+              <tr>
+                <td colSpan={2}>
+                  <span>Cash Reconciliation (BHD)</span>
+                </td>
+              </tr>
+
+              {BHD_DENOMINATIONS.map((d) => {
+                const qty = Number(cc.denominations?.[d.key] || 0);
+                const amount = qty * d.value;
+                if (!qty) return null;
+                return (
+                  <tr key={d.key}>
+                    <td><span>{d.label}</span><strong>{qty}</strong></td>
+                    <td><span>Amount</span><strong>{amount.toFixed(3)}</strong></td>
+                  </tr>
+                );
+              })}
+
+              {(cc.foreignCurrency || [])
+                .filter((fc) => fc.label || fc.qty)
+                .map((fc, i) => (
+                  <tr key={`fc-print-${i}`}>
+                    <td><span>{fc.label || "FC"}</span><strong>{fc.qty}</strong></td>
+                    <td><span>Amount</span><strong>{((Number(fc.qty) || 0) * (Number(fc.value) || 0)).toFixed(3)}</strong></td>
+                  </tr>
+                ))}
+
+              <tr>
+                <td><span>Tills Float</span><strong>{Number(cc.tillFloat || 0).toFixed(3)}</strong></td>
+                <td><span>Sale Cash (report)</span><strong>{Number(cc.saleCashPerReport || 0).toFixed(3)}</strong></td>
+              </tr>
+
+              {cc.remarks && (
+                <tr>
+                  <td colSpan={2}>
+                    <span>Remarks</span>
+                    <strong>{cc.remarks}</strong>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
 
         <div className="audit-print-signoff audit-print-signoff-4">
           <div>

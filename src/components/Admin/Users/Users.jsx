@@ -549,12 +549,13 @@ const closeModal = () => {
         }
       >
       <UserForm
-  editingUser={editingUser}
-  locations={locations}
-  handleAddUser={handleAddUser}
-  onCancelEdit={closeModal}
-  prefillData={prefillData}
-/>
+        editingUser={editingUser}
+        locations={locations}
+        handleAddUser={handleAddUser}
+        onCancelEdit={closeModal}
+        prefillData={prefillData}
+      />
+      
       </Modal>
     </div>
   );

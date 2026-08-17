@@ -11,6 +11,13 @@
     --audit-danger: #c94f4f;
     --audit-warning: #c98a2c;
     --audit-radius: 10px;
+
+    /* Formal print palette (management-facing report) */
+    --excel-green: #263238;
+    --excel-green-dark: #10161a;
+    --excel-header-bg: #eceff1;
+    --excel-band-bg: #f7f8f9;
+    --excel-border: #d9dcdf;
 }
 
 .audit-page {
@@ -178,6 +185,7 @@ table.audit-table textarea:focus {
     border-radius: 999px;
     font-size: 0.78rem;
     font-weight: 600;
+    text-transform: uppercase;
 }
 
 .audit-badge.Low {
@@ -355,7 +363,7 @@ table.audit-table textarea:focus {
 }
 
 /* ---------------------------------------------------------------------- */
-/* PRINT-ONLY FORMAL REPORT                                              */
+/* PRINT-ONLY FORMAL REPORT — Excel-style colors, enlarged to fill page   */
 /* ---------------------------------------------------------------------- */
 .print-only { display: none; }
 
@@ -363,94 +371,127 @@ table.audit-table textarea:focus {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 3px double #1c2624;
+    border-bottom: 1px solid var(--excel-green);
     padding-bottom: 14px;
-    margin-bottom: 16px;
+    margin-bottom: 20px;
 }
-.audit-print-brand { display: flex; align-items: center; gap: 12px; }
-.audit-print-brand img { width: 44px; height: 44px; object-fit: contain; }
-.audit-print-brand h2 { margin: 0; font-size: 18px; }
-.audit-print-brand span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #555; }
+.audit-print-brand { display: flex; align-items: center; gap: 14px; }
+.audit-print-brand img { width: 48px; height: 48px; object-fit: contain; }
+.audit-print-brand h2 { margin: 0; font-size: 22px; letter-spacing: 0.01em; color: var(--excel-green-dark); }
+.audit-print-brand span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #666; }
 
 .audit-print-rating { text-align: right; }
 .audit-print-rating-value {
     display: block;
     font-size: 26px;
-    font-weight: 800;
-    color: #1c2624;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--excel-green-dark);
 }
 
 .audit-print-meta {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 16px;
-    font-size: 12px;
+    margin-bottom: 22px;
+    font-size: 15px;
 }
 .audit-print-meta td {
-    border: 1px solid #ccc;
-    padding: 6px 10px;
+    border: 1px solid var(--excel-border);
+    padding: 10px 14px;
     width: 50%;
 }
-.audit-print-meta span { display: block; font-size: 10px; text-transform: uppercase; color: #777; letter-spacing: 0.05em; }
-.audit-print-meta strong { font-size: 13px; }
+.audit-print-meta span { display: block; font-size: 12px; text-transform: uppercase; color: #777; letter-spacing: 0.05em; }
+.audit-print-meta strong { font-size: 16px; }
 
 .audit-print-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 11px;
+    font-size: 12.5px;
 }
 .audit-print-table th,
 .audit-print-table td {
-    border: 1px solid #ccc;
-    padding: 6px 8px;
+    border: 1px solid var(--excel-border);
+    padding: 8px 10px;
     text-align: left;
     vertical-align: top;
 }
 .audit-print-table thead th {
-    background: #f0f0f0;
+    background: var(--excel-green);
+    color: #fff;
     text-transform: uppercase;
-    font-size: 10px;
-    letter-spacing: 0.03em;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    border: 1px solid var(--excel-green);
+}
+.audit-print-table tbody tr:nth-child(even):not(.audit-print-major-row):not(.audit-print-sub-row) td {
+    background: var(--excel-band-bg);
 }
 .audit-print-major-row td {
-    background: #1c2624;
+    background: var(--excel-green);
     color: #fff;
     font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+    border: 1px solid var(--excel-green);
 }
 .audit-print-sub-row td {
-    background: #e4e7e6;
+    background: var(--excel-header-bg);
+    color: var(--excel-green-dark);
+    font-weight: 700;
+    font-size: 12.5px;
+    border: 1px solid var(--excel-border);
+}
+
+/* Rating values inside the print table — muted traffic-light colors, Excel-style */
+.audit-print-table td.audit-print-rating-Low,
+.audit-print-table .audit-badge.Low {
+    background: #e6f0e8;
+    color: #1e5631;
+    font-weight: 700;
+}
+.audit-print-table td.audit-print-rating-Moderate,
+.audit-print-table .audit-badge.Moderate {
+    background: #faf1dc;
+    color: #8a6416;
+    font-weight: 700;
+}
+.audit-print-table td.audit-print-rating-High,
+.audit-print-table .audit-badge.High {
+    background: #f6e3e2;
+    color: #8f2b23;
     font-weight: 700;
 }
 
 .audit-print-signoff {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 40px;
-    margin-top: 40px;
+    gap: 50px;
+    margin-top: 50px;
     page-break-inside: avoid;
 }
 .audit-print-signoff span {
     display: block;
-    font-size: 10px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #777;
-    margin-bottom: 30px;
+    margin-bottom: 36px;
 }
-.audit-print-signoff-line { border-top: 1px solid #333; margin-bottom: 6px; }
-.audit-print-signoff em { font-style: normal; font-size: 12px; color: #333; }
+.audit-print-signoff-line { border-top: 1px solid #333; margin-bottom: 8px; }
+.audit-print-signoff em { font-style: normal; font-size: 14px; color: #333; }
 
 .audit-print-footer {
-    margin-top: 24px;
-    padding-top: 8px;
-    border-top: 1px solid #ccc;
-    font-size: 9px;
+    margin-top: 30px;
+    padding-top: 10px;
+    border-top: 1px solid var(--excel-border);
+    font-size: 11px;
     color: #888;
     text-align: center;
 }
 
 @media print {
-    @page { size: A4 landscape; margin: 14mm; }
+    @page { size: A4 landscape; margin: 8mm; }
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
     body * { visibility: hidden; }
@@ -460,13 +501,18 @@ table.audit-table textarea:focus {
         left: 0;
         top: 0;
         width: 100%;
+        height: 100%;
         max-width: none !important;
         padding: 0 !important;
         margin: 0 !important;
     }
 
     .no-print { display: none !important; }
-    .print-only { display: block !important; }
+    .print-only {
+        display: flex !important;
+        flex-direction: column;
+        min-height: 100%;
+    }
 
     .audit-print-major-row td,
     .audit-print-sub-row td { break-inside: avoid; page-break-inside: avoid; }
@@ -551,7 +597,7 @@ table.audit-table textarea:focus {
 /* Print sign-off — 4 columns (Auditor / Audit Manager / Ops Manager / Store Manager) */
 .audit-print-signoff-4 {
     grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    gap: 26px;
 }
 
 /* ---------------------------------------------------------------------- */

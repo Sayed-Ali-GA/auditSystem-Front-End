@@ -1,248 +1,248 @@
 import { useState, useEffect } from "react";
 import Select from "react-select";
-import { FiHash, FiTag, FiMapPin, FiUserCheck, FiUser, FiSave } from "react-icons/fi";
+import {
+  FiHash,
+  FiTag,
+  FiMapPin,
+  FiUserCheck,
+  FiUser,
+  FiMail,
+  FiSave,
+} from "react-icons/fi";
 
-
-const StoreForm = ({ opsManagers, brands, locations, handleAddStore, storeManagers, editingStore }) => {
-
-
-    useEffect(() => {
-
-    if(editingStore){
-
-        setStoreData({
-            StoreCode: editingStore.storecode,
-            BrandID: editingStore.brandid,
-            LocationID: editingStore.locationid,
-            OpsManagerID: editingStore.opsmanagerid,
-            StoreManagerID: editingStore.storemanagerid
-        });
-
+const StoreForm = ({
+  opsManagers,
+  brands,
+  locations,
+  handleAddStore,
+  storeManagers,
+  editingStore,
+}) => {
+  useEffect(() => {
+    if (editingStore) {
+      setStoreData({
+        StoreCode: editingStore.storecode,
+        Email: editingStore.email || "",
+        BrandID: editingStore.brandid,
+        LocationID: editingStore.locationid,
+        OpsManagerID: editingStore.opsmanagerid,
+        StoreManagerID: editingStore.storemanagerid,
+      });
     } else {
-
-        setStoreData({
-            StoreCode: "",
-            BrandID: null,
-            LocationID: null,
-            OpsManagerID: null,
-            StoreManagerID: null
-        });
-
-    }
-
-},[editingStore]);
-
-
-
-    const [storeData, setStoreData] = useState({
+      setStoreData({
         StoreCode: "",
+        Email: "",
         BrandID: null,
         LocationID: null,
         OpsManagerID: null,
-        StoreManagerID: null
+        StoreManagerID: null,
+      });
+    }
+  }, [editingStore]);
+
+  const [storeData, setStoreData] = useState({
+    StoreCode: "",
+    Email: "",
+    BrandID: null,
+    LocationID: null,
+    OpsManagerID: null,
+    StoreManagerID: null,
+  });
+
+  const handleChange = (e) => {
+    setStoreData({
+      ...storeData,
+      [e.target.name]: e.target.value,
     });
+  };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    const handleChange = (e) => {
+    await handleAddStore(storeData);
 
-        setStoreData({
-            ...storeData,
-            [e.target.name]: e.target.value
-        });
+    if (!editingStore) {
+      setStoreData({
+        StoreCode: "",
+        Email: "",
+        BrandID: null,
+        LocationID: null,
+        OpsManagerID: null,
+        StoreManagerID: null,
+      });
+    }
+  };
 
-    };
-
-
-
-        const handleSubmit = async (e) => {
-            e.preventDefault();
-
-            await handleAddStore(storeData);
-
-            if(!editingStore){
-
-                setStoreData({
-                    StoreCode: "",
-                    BrandID: null,
-                    LocationID: null,
-                    OpsManagerID: null,
-                    StoreManagerID: null
-                });
-
-            }
-        };
-
-
-    const filteredStoreManagers = storeManagers.filter((storeManager) => {
+  const filteredStoreManagers = storeManagers.filter((storeManager) => {
     const matchBrand =
-        !storeData.BrandID || storeManager.brandid === storeData.BrandID;
+      !storeData.BrandID || storeManager.brandid === storeData.BrandID;
 
     const matchLocation =
-        !storeData.LocationID || storeManager.locationid === storeData.LocationID;
+      !storeData.LocationID || storeManager.locationid === storeData.LocationID;
 
     return matchBrand && matchLocation;
-});
+  });
 
+  const brandOptions = brands.map((brand) => ({
+    value: brand.brandid,
+    label: brand.brandname,
+  }));
 
+  const locationOptions = locations.map((location) => ({
+    value: location.locationid,
+    label: location.locationname,
+  }));
 
-    const brandOptions = brands.map((brand) => ({
-        value: brand.brandid,
-        label: brand.brandname,
-    }));
+  const opsManagerOptions = opsManagers.map((opsManager) => ({
+    value: opsManager.opsmanagerid,
+    label: opsManager.opsmanagername,
+  }));
 
-    const locationOptions = locations.map((location) => ({
-        value: location.locationid,
-        label: location.locationname,
-    }));
+  const storeManagerOptions = filteredStoreManagers.map((storeManager) => ({
+    value: storeManager.storemanagerid,
+    label: storeManager.storemanagername,
+  }));
 
-    const opsManagerOptions = opsManagers.map((opsManager) => ({
-        value: opsManager.opsmanagerid,
-        label: opsManager.opsmanagername,
-    }));
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="ag-form-grid">
+        <div className="ag-field">
+          <label>
+            <FiHash /> Store code
+          </label>
+          <input
+            type="text"
+            name="StoreCode"
+            placeholder="BHA-LC-1045"
+            onChange={handleChange}
+            value={storeData.StoreCode}
+            required
+          />
+        </div>
 
+        <div className="ag-field">
+          <label>
+            <FiMail /> Store email
+          </label>
+          <input
+            type="email"
+            name="Email"
+            placeholder="store@apparelgroup.com"
+            onChange={handleChange}
+            value={storeData.Email}
+          />
+        </div>
 
+        <div className="ag-field">
+          <label>
+            <FiTag /> Brand
+          </label>
+          <Select
+            classNamePrefix="ag-rs"
+            className="ag-select"
+            options={brandOptions}
+            required
+            placeholder="Search brand..."
+            value={
+              brandOptions.find(
+                (option) => option.value === storeData.BrandID,
+              ) || null
+            }
+            onChange={(selectedOption) =>
+              setStoreData({
+                ...storeData,
+                BrandID: selectedOption ? selectedOption.value : null,
+                StoreManagerID: null,
+              })
+            }
+            isSearchable
+          />
+        </div>
 
-    const storeManagerOptions = filteredStoreManagers.map((storeManager) => ({
-        value: storeManager.storemanagerid,
-        label: storeManager.storemanagername,
-    }));
+        <div className="ag-field">
+          <label>
+            <FiMapPin /> Location
+          </label>
+          <Select
+            classNamePrefix="ag-rs"
+            className="ag-select"
+            options={locationOptions}
+            placeholder="Search location..."
+            required
+            value={
+              locationOptions.find(
+                (option) => option.value === storeData.LocationID,
+              ) || null
+            }
+            onChange={(selectedOption) =>
+              setStoreData({
+                ...storeData,
+                LocationID: selectedOption ? selectedOption.value : null,
+              })
+            }
+            isSearchable
+          />
+        </div>
 
+        <div className="ag-field">
+          <label>
+            <FiUserCheck /> Ops manager
+          </label>
+          <Select
+            classNamePrefix="ag-rs"
+            className="ag-select"
+            options={opsManagerOptions}
+            required
+            placeholder="Search ops managers..."
+            value={
+              opsManagerOptions.find(
+                (option) => option.value === storeData.OpsManagerID,
+              ) || null
+            }
+            onChange={(selectedOption) =>
+              setStoreData({
+                ...storeData,
+                OpsManagerID: selectedOption ? selectedOption.value : null,
+              })
+            }
+            isSearchable
+          />
+        </div>
 
+        <div className="ag-field">
+          <label>
+            <FiUser /> Store manager
+          </label>
+          <Select
+            classNamePrefix="ag-rs"
+            className="ag-select"
+            options={storeManagerOptions}
+            placeholder="Search store managers..."
+            required
+            value={
+              storeManagerOptions.find(
+                (option) => option.value === storeData.StoreManagerID,
+              ) || null
+            }
+            onChange={(selectedOption) =>
+              setStoreData({
+                ...storeData,
+                StoreManagerID: selectedOption ? selectedOption.value : null,
+              })
+            }
+            isSearchable
+          />
+        </div>
+      </div>
 
-    return (
-        <form onSubmit={handleSubmit}>
-
-            <div className="ag-form-grid">
-
-                <div className="ag-field">
-                    <label><FiHash /> Store code</label>
-                        <input
-                            type="text"
-                            name="StoreCode"
-                            placeholder="BHA-LC-1045"
-                            onChange={handleChange}
-                            value={storeData.StoreCode}
-                            required
-                        />
-                </div>
-
-
-                <div className="ag-field">
-                    <label><FiTag /> Brand</label>
-                    <Select
-                        classNamePrefix="ag-rs"
-                        className="ag-select"
-                        options={brandOptions}
-                        required
-                        placeholder="Search brand..."
-                        value={
-                            brandOptions.find(
-                                (option) =>
-                                    option.value === storeData.BrandID
-                            ) || null
-                        }
-                        onChange={(selectedOption) =>
-                            setStoreData({
-                                ...storeData,
-                                BrandID: selectedOption ? selectedOption.value: null,
-                                 StoreManagerID: null,
-                            })
-                        }
-                        isSearchable
-                    />
-                </div>
-
-                <div className="ag-field">
-                    <label><FiMapPin /> Location</label>
-                    <Select
-                        classNamePrefix="ag-rs"
-                        className="ag-select"
-                        options={locationOptions}
-                        placeholder="Search location..."
-                        required
-                        value={
-                            locationOptions.find(
-                                (option) =>
-                                    option.value === storeData.LocationID
-                            ) || null
-                        }
-                        onChange={(selectedOption) =>
-                            setStoreData({
-                                ...storeData,
-                                LocationID: selectedOption
-                                    ? selectedOption.value
-                                    : null
-
-                            })
-                        }
-                        isSearchable
-                    />
-                </div>
-
-
-                <div className="ag-field">
-                    <label><FiUserCheck /> Ops manager</label>
-                    <Select
-                        classNamePrefix="ag-rs"
-                        className="ag-select"
-                        options={opsManagerOptions}
-                        required
-                        placeholder="Search ops managers..."
-                        value={
-                            opsManagerOptions.find(
-                                (option) =>
-                                    option.value === storeData.OpsManagerID
-                            ) || null
-                        }
-                        onChange={(selectedOption) =>
-                            setStoreData({
-                                ...storeData,
-                                OpsManagerID: selectedOption
-                                    ? selectedOption.value
-                                    : null
-                            })
-                        }
-                        isSearchable
-                    />
-                </div>
-
-
-                <div className="ag-field">
-                    <label><FiUser /> Store manager</label>
-                    <Select
-                        classNamePrefix="ag-rs"
-                        className="ag-select"
-                        options={storeManagerOptions}
-                        placeholder="Search store managers..."
-                        required
-                        value={
-                            storeManagerOptions.find(
-                                (option) =>
-                                    option.value === storeData.StoreManagerID
-                            ) || null
-                        }
-                        onChange={(selectedOption) =>
-                            setStoreData({
-                                ...storeData,
-                                StoreManagerID: selectedOption
-                                    ? selectedOption.value
-                                    : null
-                            })
-                        }
-                        isSearchable
-                    />
-                </div>
-
-            </div>
-
-            <div className="ag-form-actions">
-                <button type="submit" className="ag-btn ag-btn-primary">
-                    <FiSave />
-                    {editingStore ? "Update store" : "Add store"}
-                </button>
-            </div>
-        </form>
-    );
+      <div className="ag-form-actions">
+        <button type="submit" className="ag-btn ag-btn-primary">
+          <FiSave />
+          {editingStore ? "Update store" : "Add store"}
+        </button>
+      </div>
+    </form>
+  );
 };
 
 export default StoreForm;

@@ -14,6 +14,33 @@ const RATING_OPTIONS = [
     { value: "NA", label: "NA" }
 ];
 
+const BHD_DENOMINATIONS = [
+    { key: "20", label: "20", value: 20 },
+    { key: "10", label: "10", value: 10 },
+    { key: "5", label: "5", value: 5 },
+    { key: "1", label: "1", value: 1 },
+    { key: "0.500", label: ".500", value: 0.5 },
+    { key: "0.100", label: "0.100", value: 0.1 },
+    { key: "0.050", label: "0.050", value: 0.05 },
+    { key: "0.025", label: "0.025", value: 0.025 },
+    { key: "0.010", label: "0.010", value: 0.01 },
+];
+
+const emptyCashCount = () => ({
+    denominations: BHD_DENOMINATIONS.reduce(
+        (acc, d) => ({ ...acc, [d.key]: 0 }),
+        {}
+    ),
+    foreignCurrency: [
+        { label: "", qty: 0, value: 0 },
+        { label: "", qty: 0, value: 0 },
+        { label: "", qty: 0, value: 0 },
+    ],
+    tillFloat: 0,
+    saleCashPerReport: 0,
+    remarks: "",
+});
+
 const notify = (icon, title) => {
     Swal.fire({
         toast: true,
@@ -45,6 +72,8 @@ const AuditDetails = () => {
     const [saving, setSaving] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
+
+    const [cashCount, setCashCount] = useState(emptyCashCount());
 
     useEffect(() => {
         const init = async () => {
@@ -91,6 +120,10 @@ const AuditDetails = () => {
                             ? new Date(existingDraft.auditdate).toISOString().split("T")[0]
                             : ""
                     );
+
+                    if (existingDraft.cashcount) {
+                        setCashCount({ ...emptyCashCount(), ...existingDraft.cashcount });
+                    }
                 }
             } catch (err) {
                 console.log(err);
@@ -131,6 +164,21 @@ const AuditDetails = () => {
         setAuditPoints(updated);
     };
 
+    const handleDenomChange = (key, value) => {
+        setCashCount((prev) => ({
+            ...prev,
+            denominations: { ...prev.denominations, [key]: value },
+        }));
+    };
+
+    const handleFcChange = (index, field, value) => {
+        setCashCount((prev) => {
+            const updated = [...prev.foreignCurrency];
+            updated[index] = { ...updated[index], [field]: value };
+            return { ...prev, foreignCurrency: updated };
+        });
+    };
+
     const summary = useMemo(() => {
         const rated = auditPoints.filter((p) => p.score !== null);
         const totalScore = rated.reduce((sum, p) => sum + p.score, 0);
@@ -145,7 +193,7 @@ const AuditDetails = () => {
         let riskLevel = null;
         if (finalPercentage !== null) {
             if (finalPercentage >= 90) riskLevel = "Low";
-            else if (finalPercentage >= 75) riskLevel = "Moderate";
+            else if (finalPercentage > 70) riskLevel = "Moderate";
             else riskLevel = "High";
         }
 
@@ -157,6 +205,31 @@ const AuditDetails = () => {
             totalCount: auditPoints.length
         };
     }, [auditPoints]);
+
+    const cashSummary = useMemo(() => {
+        const denomTotal = BHD_DENOMINATIONS.reduce(
+            (sum, d) =>
+                sum + (Number(cashCount.denominations[d.key]) || 0) * d.value,
+            0
+        );
+
+        const fcTotal = cashCount.foreignCurrency.reduce(
+            (sum, fc) => sum + (Number(fc.qty) || 0) * (Number(fc.value) || 0),
+            0
+        );
+
+        const totalWithCashier = denomTotal + fcTotal;
+
+        const totalAsPerReport =
+            (Number(cashCount.tillFloat) || 0) +
+            (Number(cashCount.saleCashPerReport) || 0);
+
+        return {
+            totalWithCashier,
+            totalAsPerReport,
+            difference: totalWithCashier - totalAsPerReport,
+        };
+    }, [cashCount]);
 
     const validate = () => {
         if (!cashierName.trim()) return "Please enter the cashier name.";
@@ -194,7 +267,8 @@ const AuditDetails = () => {
                     cashierName: cashierName || null,
                     auditDate: auditDate || null,
                     status: "Draft",
-                    evaluations: buildEvaluationsPayload()
+                    evaluations: buildEvaluationsPayload(),
+                    cashCount
                 });
                 notify("success", "Draft saved.");
             } else {
@@ -208,6 +282,7 @@ const AuditDetails = () => {
                     auditDate,
                     auditOverstation,
                     status: "Draft",
+                    cashCount,
                     auditPoints: auditPoints.map((p) => ({
                         id: p.id,
                         rating: p.rating,
@@ -250,7 +325,8 @@ const AuditDetails = () => {
                     auditDate,
                     auditOverstation,
                     status: "Submitted",
-                    evaluations: buildEvaluationsPayload()
+                    evaluations: buildEvaluationsPayload(),
+                    cashCount
                 });
             } else {
                 const opsManagerID = store.opsmanagerid || store.OpsManagerID;
@@ -263,6 +339,7 @@ const AuditDetails = () => {
                     auditDate,
                     auditOverstation,
                     status: "Submitted",
+                    cashCount,
                     auditPoints: auditPoints.map((p) => ({
                         id: p.id,
                         rating: p.rating,
@@ -347,6 +424,141 @@ const AuditDetails = () => {
                 </div>
             </div>
 
+            <div className="audit-card">
+                <h3 style={{ marginTop: 0 }}>Cash Count (BHD)</h3>
+
+                <div className="audit-table-wrap">
+                    <table className="audit-table">
+                        <thead>
+                            <tr>
+                                <th>Denomination</th>
+                                <th>Qty</th>
+                                <th>Amount (BHD)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {BHD_DENOMINATIONS.map((d) => (
+                                <tr key={d.key}>
+                                    <td>{d.label}</td>
+                                    <td>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            value={cashCount.denominations[d.key]}
+                                            onChange={(e) =>
+                                                handleDenomChange(d.key, e.target.value)
+                                            }
+                                        />
+                                    </td>
+                                    <td>
+                                        {(
+                                            (Number(cashCount.denominations[d.key]) || 0) *
+                                            d.value
+                                        ).toFixed(3)}
+                                    </td>
+                                </tr>
+                            ))}
+
+                            {cashCount.foreignCurrency.map((fc, i) => (
+                                <tr key={`fc-${i}`}>
+                                    <td>
+                                        <input
+                                            type="text"
+                                            placeholder="FC currency"
+                                            value={fc.label}
+                                            onChange={(e) =>
+                                                handleFcChange(i, "label", e.target.value)
+                                            }
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            placeholder="Qty"
+                                            value={fc.qty}
+                                            onChange={(e) =>
+                                                handleFcChange(i, "qty", e.target.value)
+                                            }
+                                        />
+                                    </td>
+                                    <td>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            placeholder="Value in BHD"
+                                            value={fc.value}
+                                            onChange={(e) =>
+                                                handleFcChange(i, "value", e.target.value)
+                                            }
+                                        />
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div className="audit-store-summary" style={{ marginTop: 14 }}>
+                    <div className="audit-field">
+                        <label>Tills Float</label>
+                        <input
+                            type="number"
+                            value={cashCount.tillFloat}
+                            onChange={(e) =>
+                                setCashCount((p) => ({ ...p, tillFloat: e.target.value }))
+                            }
+                        />
+                    </div>
+
+                    <div className="audit-field">
+                        <label>Sale Cash (per report)</label>
+                        <input
+                            type="number"
+                            value={cashCount.saleCashPerReport}
+                            onChange={(e) =>
+                                setCashCount((p) => ({
+                                    ...p,
+                                    saleCashPerReport: e.target.value
+                                }))
+                            }
+                        />
+                    </div>
+
+                    <div className="audit-store-item">
+                        <span>Total Cash with Cashier</span>
+                        <strong>{cashSummary.totalWithCashier.toFixed(3)} BHD</strong>
+                    </div>
+
+                    <div className="audit-store-item">
+                        <span>Total Cash as per Report</span>
+                        <strong>{cashSummary.totalAsPerReport.toFixed(3)} BHD</strong>
+                    </div>
+
+                    <div className="audit-store-item">
+                        <span>Difference (Excess/Shortage)</span>
+                        <strong
+                            style={{
+                                color:
+                                    cashSummary.difference === 0 ?    "#c94f4f" :  "#1f7a4d"  
+                            }}
+                        >
+                            {cashSummary.difference.toFixed(3)} BHD
+                        </strong>
+                    </div>
+                </div>
+
+                <div className="audit-field" style={{ marginTop: 12 }}>
+                    <label>Remarks (if any)</label>
+                    <textarea
+                        value={cashCount.remarks}
+                        onChange={(e) =>
+                            setCashCount((p) => ({ ...p, remarks: e.target.value }))
+                        }
+                    />
+                </div>
+            </div>
+
             {loadingPoints ? (
                 <div className="audit-empty">Loading audit points…</div>
             ) : (
@@ -354,8 +566,8 @@ const AuditDetails = () => {
                     <table className="audit-table">
                         <thead>
                             <tr>
-                                <th>Criteria</th>
-                                <th>Sub Point</th>
+                                 <th>Sub Point</th>
+                                <th>Criteria</th>                              
                                 <th>Audit Point</th>
                                 <th>Risk Matrix</th>
                                 <th>Rating</th>
@@ -369,8 +581,8 @@ const AuditDetails = () => {
                         <tbody>
                             {auditPoints.map((point, index) => (
                                 <tr key={point.id}>
+                                     <td>{point.subPoint}</td>
                                     <td>{point.criteria}</td>
-                                    <td>{point.subPoint}</td>
                                     <td>{point.auditPoint}</td>
                                     <td>{point.risk}</td>
                                     <td>
@@ -430,7 +642,11 @@ const AuditDetails = () => {
                         <strong>
                             {summary.riskLevel && (
                                 <span className={`audit-badge ${summary.riskLevel}`}>
-                                    {summary.riskLevel}
+                                    {summary.riskLevel === "Low"
+                                        ? "SATISFACTORY"
+                                        : summary.riskLevel === "Moderate"
+                                        ? "NEEDS IMPROVEMENT"
+                                        : "UNSATISFACTORY"}
                                 </span>
                             )}
                         </strong>

@@ -77,7 +77,7 @@ const Sidebar = () => {
             { name: "Reports", path: "/Reports", icon: <FiBarChart2 /> },
         ],
         opsManager: [
-            { name: "Audit Point", path: "/audit-points", icon: <FiClipboard /> },
+            // { name: "Audit Point", path: "/audit-points", icon: <FiClipboard /> },
             { name: "My Tasks", path: "/tasks", icon: <FiInbox />, badge: true },
             { name: "Audits", path: "/Audits", icon: <FiArchive /> },
             { name: "Reports", path: "/Reports", icon: <FiBarChart2 /> },
