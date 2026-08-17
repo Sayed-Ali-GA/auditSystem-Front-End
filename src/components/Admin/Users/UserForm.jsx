@@ -9,6 +9,7 @@ import {
   FiSave,
   FiX,
   FiAlertCircle,
+  FiMail,
 } from "react-icons/fi";
 
 const initialUser = {
@@ -17,6 +18,7 @@ const initialUser = {
   Password: "",
   LocationID: null,
   RoleID: "",
+  Email: "",
 };
 
 const UserForm = ({
@@ -41,6 +43,7 @@ useEffect(() => {
       Password: "",
       LocationID: editingUser.locationid || null,
       RoleID: editingUser.roleid || "",
+      Email: editingUser.email || "",
     });
   } else if (prefillData) {
     setFormData({
@@ -49,6 +52,7 @@ useEffect(() => {
       Password: "",
       LocationID: prefillData.locationId || null,
       RoleID: prefillData.role || "",
+      Email: "",
     });
   } else {
     setFormData(initialUser);
@@ -123,13 +127,13 @@ useEffect(() => {
             </label>
 
             <input
-  type="number"
-  name="OracleID"
-  value={formData.OracleID}
-  placeholder="Oracle ID"
-  onChange={handleChange}
-  readOnly={Boolean(prefillData)}
-/>
+                  type="number"
+                  name="OracleID"
+                  value={formData.OracleID}
+                  placeholder="Oracle ID"
+                  onChange={handleChange}
+                  readOnly={Boolean(prefillData)}
+                />
           </div>
         )}
 
@@ -144,6 +148,21 @@ useEffect(() => {
             name="UserName"
             value={formData.UserName}
             placeholder="User name"
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="ag-field">
+          <label>
+            <FiMail />
+            Email
+          </label>
+
+          <input
+            type="email"
+            name="Email"
+            value={formData.Email}
+            placeholder="name@company.com"
             onChange={handleChange}
           />
         </div>

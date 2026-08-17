@@ -357,6 +357,8 @@ const Stores = () => {
 
                 <th>Store code</th>
 
+                <th>Email</th>
+
                 <th>Brand</th>
 
                 <th>Location</th>
@@ -401,6 +403,9 @@ const Stores = () => {
 
                     {/* Store Code */}
                     <td data-label="Store code">{store.storecode}</td>
+
+                  {/* Email for store */}
+                    <td data-label="Email">{store.email || "-"}</td>
 
                     {/* Brand */}
                     <td data-label="Brand">{store.brandname}</td>

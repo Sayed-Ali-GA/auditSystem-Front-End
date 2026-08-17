@@ -16,8 +16,7 @@ const index = async (includeInactive = false) => {
       throw new Error("Failed to fetch Store ");
     }
 
-    const data = await response.json();
-    return data;
+    return await response.json();
   } catch (error) {
     console.error("Error fetching Store :", error);
     throw error;
@@ -86,8 +85,7 @@ const update = async (id, storeData) => {
   }
 };
 
-
-
+// ⚠️ كانت ناقصة — هذا سبب فشل زر "استرجاع" للمتاجر المؤرشفة
 const restore = async (id) => {
   try {
     const response = await fetch(`${BASE_URL}/${id}/restore`, {
@@ -96,7 +94,7 @@ const restore = async (id) => {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to restore Store ");
+      throw new Error("Failed to restore Store");
     }
 
     return await response.json();
@@ -111,4 +109,5 @@ export default {
   create,
   remove,
   update,
+  restore, 
 };
