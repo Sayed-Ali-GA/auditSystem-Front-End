@@ -85,7 +85,6 @@ const update = async (id, storeData) => {
   }
 };
 
-// ⚠️ كانت ناقصة — هذا سبب فشل زر "استرجاع" للمتاجر المؤرشفة
 const restore = async (id) => {
   try {
     const response = await fetch(`${BASE_URL}/${id}/restore`, {
@@ -109,5 +108,5 @@ export default {
   create,
   remove,
   update,
-  restore, 
+  restore,
 };

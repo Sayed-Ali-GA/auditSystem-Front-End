@@ -34,6 +34,55 @@
 }
 
 
+.login-mode-switch {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 22px;
+    background: #f6f7f8;
+    border: 1px solid #ebedf0;
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.login-mode-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--slate);
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.login-mode-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.login-mode-btn:hover:not(:disabled):not(.active) {
+    color: var(--ink-text);
+}
+
+.login-mode-btn.active {
+    background: #ffffff;
+    color: var(--ink-text);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.login-mode-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 
 .navbar {
     display: flex;

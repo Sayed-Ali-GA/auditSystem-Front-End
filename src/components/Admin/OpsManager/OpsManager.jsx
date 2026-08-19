@@ -5,18 +5,16 @@ import {
   FiEdit2,
   FiTrash2,
   FiPlus,
-  FiRotateCcw,
-  FiArchive,
+  FiUserPlus,
 } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 
 import OpsManagerService from "../../../services/OpsManagerServices";
 import OpsManagerForm from "./OpsManagerForm";
+import userService from "../../../services/UserServices";
 
 import PageHeader from "../Shared/PageHeader";
 import LoadingState from "../Shared/LoadingState";
-import { useNavigate } from "react-router-dom";
-import { FiUserPlus } from "react-icons/fi";
-import userService from "../../../services/UserServices";
 import Modal from "../Shared/Modal";
 
 import "../Shared/theme.css";
@@ -24,62 +22,74 @@ import "./OpsManager.css";
 
 const OpsManager = () => {
   const [opsManagers, setOpsManagers] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [editingOpsManager, setEditingOpsManager] = useState(null);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [linkedOracleIds, setLinkedOracleIds] = useState(new Set());
 
-  const [showArchived, setShowArchived] = useState(false);
+  const navigate = useNavigate();
 
   // =========================
   // LOAD OPS MANAGERS
   // =========================
-  const loadOpsManagers = async (includeInactive) => {
+  const loadOpsManagers = async () => {
     try {
       setLoading(true);
 
-      const data = await OpsManagerService.index(includeInactive);
+      const data = await OpsManagerService.index();
 
-      setOpsManagers(data);
+      setOpsManagers(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.log(error);
+      console.error("Load Ops Managers Error:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Could not load Ops Managers.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadOpsManagers(showArchived);
+    loadOpsManagers();
+  }, []);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showArchived]);
+  // =========================
+  // LOAD USER ACCOUNTS
+  // =========================
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const data = await userService.index();
 
+        setLinkedOracleIds(
+          new Set(
+            data
+              .map((user) => Number(user.oracleid))
+              .filter((id) => !Number.isNaN(id))
+          )
+        );
+      } catch (error) {
+        console.error("Load Users Error:", error);
+      }
+    };
 
+    loadUsers();
+  }, []);
 
-  const navigate = useNavigate();
-const [linkedOracleIds, setLinkedOracleIds] = useState(new Set());
-
-useEffect(() => {
-  const loadUsers = async () => {
-    try {
-      const data = await userService.index();
-      setLinkedOracleIds(new Set(data.map((u) => Number(u.oracleid))));
-    } catch (error) {
-      console.log(error);
-    }
+  // =========================
+  // ADD TO USERS
+  // =========================
+  const handleAddToUsers = (opsManager) => {
+    navigate(
+      `/users?role=2&oracleId=${opsManager.oracleid}&userName=${encodeURIComponent(
+        opsManager.opsmanagername
+      )}`
+    );
   };
-  loadUsers();
-}, []);
-
-const handleAddToUsers = (opsManager) => {
-  navigate(
-    `/users?role=2&oracleId=${opsManager.oracleid}&userName=${encodeURIComponent(
-      opsManager.opsmanagername,
-    )}`,
-  );
-};
 
   // =========================
   // MODAL
@@ -107,15 +117,15 @@ const handleAddToUsers = (opsManager) => {
       if (editingOpsManager) {
         const updatedOpsManager = await OpsManagerService.update(
           editingOpsManager.opsmanagerid,
-          opsManagerData,
+          opsManagerData
         );
 
         setOpsManagers((prev) =>
           prev.map((item) =>
             item.opsmanagerid === editingOpsManager.opsmanagerid
               ? updatedOpsManager
-              : item,
-          ),
+              : item
+          )
         );
 
         Swal.fire({
@@ -124,7 +134,8 @@ const handleAddToUsers = (opsManager) => {
           text: "Ops Manager updated successfully.",
         });
       } else {
-        const newOpsManager = await OpsManagerService.create(opsManagerData);
+        const newOpsManager =
+          await OpsManagerService.create(opsManagerData);
 
         setOpsManagers((prev) => [...prev, newOpsManager]);
 
@@ -137,7 +148,7 @@ const handleAddToUsers = (opsManager) => {
 
       closeModal();
     } catch (error) {
-      console.log(error);
+      console.error("Save Ops Manager Error:", error);
 
       Swal.fire({
         icon: "error",
@@ -148,67 +159,48 @@ const handleAddToUsers = (opsManager) => {
   };
 
   // =========================
-  // ARCHIVE
+  // DELETE OPS MANAGER — PERMANENT
   // =========================
-  const handleArchiveOpsManager = async (opsmanagerid) => {
+  const handleDelete = async (opsmanagerid) => {
     const result = await Swal.fire({
-      title: "Archive this Ops Manager?",
-      text: "They will be hidden from active assignments but kept for historical records.",
+      title: "Delete this Ops Manager permanently?",
+      text: "This cannot be undone. The Ops Manager will be permanently removed.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, archive it!",
+      confirmButtonText: "Yes, delete permanently",
       cancelButtonText: "Cancel",
+      confirmButtonColor: "#d33",
     });
 
     if (!result.isConfirmed) return;
 
     try {
+      setDeletingId(opsmanagerid);
+
       await OpsManagerService.remove(opsmanagerid);
 
       setOpsManagers((prev) =>
-        prev.filter((item) => item.opsmanagerid !== opsmanagerid),
+        prev.filter(
+          (item) =>
+            Number(item.opsmanagerid) !== Number(opsmanagerid)
+        )
       );
 
       Swal.fire({
-        title: "Archived!",
-        text: "The Ops Manager has been archived.",
         icon: "success",
+        title: "Deleted!",
+        text: "Ops Manager permanently deleted.",
       });
     } catch (error) {
-      console.log(error);
+      console.error("Delete Ops Manager Error:", error);
 
       Swal.fire({
-        title: "Error!",
-        text: "Could not archive this Ops Manager.",
         icon: "error",
-      });
-    }
-  };
-
-  // =========================
-  // RESTORE
-  // =========================
-  const handleRestoreOpsManager = async (opsmanagerid) => {
-    try {
-      await OpsManagerService.restore(opsmanagerid);
-
-      setOpsManagers((prev) =>
-        prev.filter((item) => item.opsmanagerid !== opsmanagerid),
-      );
-
-      Swal.fire({
-        title: "Restored!",
-        text: "The Ops Manager is active again.",
-        icon: "success",
-      });
-    } catch (error) {
-      console.log(error);
-
-      Swal.fire({
         title: "Error!",
-        text: "Could not restore this Ops Manager.",
-        icon: "error",
+        text: "Could not delete the Ops Manager.",
       });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -233,27 +225,13 @@ const handleAddToUsers = (opsManager) => {
         eyebrow="Team"
         title="Ops Managers"
         subtitle="Manage operations managers assigned to stores."
-        actions={
-          <button
-            type="button"
-            className="ag-btn ag-btn-ghost ag-btn-sm"
-            onClick={() => setShowArchived((v) => !v)}
-          >
-            <FiArchive />
-
-            {showArchived ? "Show active only" : "Show archived"}
-          </button>
-        }
       />
 
       <div className="ag-card">
         <div className="ag-card-title-row">
           <div className="ag-card-title">
             <FiUserCheck />
-
-            {showArchived
-              ? "All ops managers (incl. archived)"
-              : "Active ops managers"}
+            All ops managers
           </div>
 
           <button
@@ -271,106 +249,95 @@ const handleAddToUsers = (opsManager) => {
             <thead>
               <tr>
                 <th>Sl. No.</th>
-
                 <th>Name</th>
-
                 <th>Oracle ID</th>
-
-                <th>Status</th>
-
                 <th>User account</th>
-
                 <th>Edit</th>
-
-                <th>Archive / Restore</th>
+                <th>Delete</th>
               </tr>
             </thead>
 
             <tbody>
-              {opsManagers.length === 0 && (
+              {opsManagers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="ag-empty-state">
-                    {showArchived
-                      ? "No Ops Managers found."
-                      : "No active Ops Managers yet."}
+                    No Ops Managers yet.
                   </td>
                 </tr>
-              )}
+              ) : (
+                opsManagers.map((opsManager, index) => (
+                  <tr key={opsManager.opsmanagerid}>
+                    <td data-label="Sl. No.">
+                      {index + 1}
+                    </td>
 
-              {opsManagers.map((opsManager, index) => (
-                <tr key={opsManager.opsmanagerid}>
-                  <td data-label="Sl. No.">{index + 1}</td>
+                    <td data-label="Name">
+                      {opsManager.opsmanagername}
+                    </td>
 
-                  <td data-label="Name">{opsManager.opsmanagername}</td>
+                    <td data-label="Oracle ID">
+                      {opsManager.oracleid}
+                    </td>
 
-                  <td data-label="Oracle ID">{opsManager.oracleid}</td>
-
-                  <td data-label="Status">
-                    <span
-                      className={`ag-badge ${
-                        opsManager.isactive
-                          ? "ag-badge-success"
-                          : "ag-badge-muted"
-                      }`}
-                    >
-                      {opsManager.isactive ? "Active" : "Archived"}
-                    </span>
-                  </td>
-
-
-                  <td data-label="User account">
-  {linkedOracleIds.has(Number(opsManager.oracleid)) ? (
-    <span className="ag-badge ag-badge-success">Linked</span>
-  ) : (
-    <button
-      type="button"
-      className="ag-btn ag-btn-ghost ag-btn-sm"
-      onClick={() => handleAddToUsers(opsManager)}
-    >
-      <FiUserPlus /> Add to Users
-    </button>
-  )}
-</td>
-
-                  <td data-label="Edit">
-                    <div className="ag-row-actions">
-                      <button
-                        className="ag-icon-btn edit"
-                        title="Edit"
-                        onClick={() => openEditModal(opsManager)}
-                      >
-                        <FiEdit2 />
-                      </button>
-                    </div>
-                  </td>
-
-                  <td data-label="Archive / Restore">
-                    <div className="ag-row-actions">
-                      {opsManager.isactive ? (
+                    <td data-label="User account">
+                      {linkedOracleIds.has(
+                        Number(opsManager.oracleid)
+                      ) ? (
+                        <span className="ag-badge ag-badge-success">
+                          Linked
+                        </span>
+                      ) : (
                         <button
-                          className="ag-icon-btn delete"
-                          title="Archive"
+                          type="button"
+                          className="ag-btn ag-btn-ghost ag-btn-sm"
                           onClick={() =>
-                            handleArchiveOpsManager(opsManager.opsmanagerid)
+                            handleAddToUsers(opsManager)
+                          }
+                        >
+                          <FiUserPlus />
+                          Add to Users
+                        </button>
+                      )}
+                    </td>
+
+                    <td data-label="Edit">
+                      <div className="ag-row-actions">
+                        <button
+                          type="button"
+                          className="ag-icon-btn edit"
+                          title="Edit"
+                          onClick={() =>
+                            openEditModal(opsManager)
+                          }
+                        >
+                          <FiEdit2 />
+                        </button>
+                      </div>
+                    </td>
+
+                    <td data-label="Delete">
+                      <div className="ag-row-actions">
+                        <button
+                          type="button"
+                          className="ag-icon-btn delete"
+                          title="Delete"
+                          onClick={() =>
+                            handleDelete(
+                              opsManager.opsmanagerid
+                            )
+                          }
+                          disabled={
+                            deletingId ===
+                            opsManager.opsmanagerid
                           }
                         >
                           <FiTrash2 />
                         </button>
-                      ) : (
-                        <button
-                          className="ag-icon-btn enable"
-                          title="Restore"
-                          onClick={() =>
-                            handleRestoreOpsManager(opsManager.opsmanagerid)
-                          }
-                        >
-                          <FiRotateCcw />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -380,7 +347,11 @@ const handleAddToUsers = (opsManager) => {
         isOpen={isModalOpen}
         onClose={closeModal}
         icon={<FiUserCheck />}
-        title={editingOpsManager ? "Edit ops manager" : "Add new ops manager"}
+        title={
+          editingOpsManager
+            ? "Edit ops manager"
+            : "Add new ops manager"
+        }
       >
         <OpsManagerForm
           handleAddOpsManager={handleAddOpsManager}

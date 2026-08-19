@@ -638,3 +638,2695 @@ table.audit-table textarea:focus {
     align-items: center;
     gap: 6px;
 }
+
+/* ========================================================================
+   ADDITIONS — Multi-cashier, colored risk banner, redesigned table,
+   observation modal, and cash-count-as-a-button modal.
+   ======================================================================== */
+
+.audit-field-full { flex: 1 1 100%; }
+
+/* ---------------------------------------------------------------------- */
+/* Cashier list (legacy single-line variant, kept for compatibility)     */
+/* ---------------------------------------------------------------------- */
+.audit-cashier-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.audit-cashier-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--audit-bg);
+    border: 1px solid var(--audit-border);
+    border-radius: 8px;
+    padding: 4px 10px;
+}
+.audit-cashier-icon { color: var(--audit-muted); flex-shrink: 0; }
+.audit-cashier-row input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 9px 4px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    outline: none;
+    color: var(--audit-text);
+}
+.audit-cashier-remove {
+    border: none;
+    background: transparent;
+    color: var(--audit-danger);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+.audit-cashier-remove:hover { background: #fbe4e4; }
+.audit-add-cashier-btn {
+    align-self: flex-start;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Colored risk banner (replaces the small badge in the old summary card) */
+/* ---------------------------------------------------------------------- */
+.audit-risk-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 18px 24px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--audit-border);
+}
+.audit-risk-banner-label {
+    display: block;
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.75;
+}
+.audit-risk-banner-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1.15;
+}
+.audit-risk-banner-rating {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+.audit-risk-banner-meta {
+    display: block;
+    font-size: 0.8rem;
+    opacity: 0.85;
+    margin-top: 4px;
+}
+.audit-risk-banner-right { text-align: right; }
+
+.audit-risk-banner.risk-Low {
+    background: #e4f3ea;
+    border-color: #bfe2cd;
+    color: #17453a;
+}
+.audit-risk-banner.risk-Moderate {
+    background: #fbf0da;
+    border-color: #f0dca0;
+    color: #8a6416;
+}
+.audit-risk-banner.risk-High {
+    background: #fbe4e4;
+    border-color: #f3bcbc;
+    color: #8f2b23;
+}
+.audit-risk-banner.risk-none {
+    background: var(--audit-bg);
+    color: var(--audit-muted);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Rating select — colored per rating so it's readable at a glance        */
+/* ---------------------------------------------------------------------- */
+.audit-rating-select {
+    min-width: 150px;
+    border: 1.5px solid var(--audit-border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-family: inherit;
+    background: var(--audit-bg);
+    color: var(--audit-text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.audit-rating-select:focus {
+    outline: 2px solid var(--audit-primary);
+    outline-offset: 1px;
+}
+.audit-rating-select.rating-select-SV {
+    background: #e4f3ea;
+    border-color: #1f7a4d;
+    color: #17453a;
+}
+.audit-rating-select.rating-select-NI {
+    background: #fbf0da;
+    border-color: #c98a2c;
+    color: #8a6416;
+}
+.audit-rating-select.rating-select-UN {
+    background: #fbe4e4;
+    border-color: #c94f4f;
+    color: #8f2b23;
+}
+.audit-rating-select.rating-select-NA {
+    background: #eef0f0;
+    border-color: #6b7280;
+    color: #374151;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Redesigned audit points table — grouped by Criteria / Sub-point,       */
+/* fewer columns, sticky header, mobile-friendly stacked cards, and a     */
+/* per-row color strip so the eye can scan ratings without reading text.  */
+/* ---------------------------------------------------------------------- */
+.audit-points-table { min-width: 820px; border-collapse: separate; border-spacing: 0; }
+
+.audit-points-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--audit-bg);
+    font-size: 0.8rem;
+    padding: 14px 12px;
+}
+
+.audit-points-table th.col-point { width: 28%; }
+.audit-points-table th.col-weight { width: 8%; }
+.audit-points-table th.col-risk { width: 9%; }
+.audit-points-table th.col-rating { width: 18%; }
+.audit-points-table th.col-result { width: 12%; }
+.audit-points-table th.col-observation { width: 25%; }
+
+.audit-points-table tbody td { padding: 14px 12px; }
+
+/* Major criteria row — bold banner with a running count of points */
+.audit-points-major-row td {
+    background: var(--audit-primary);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.86rem;
+    letter-spacing: 0.02em;
+    padding: 12px 16px !important;
+}
+.audit-points-major-name {
+    text-transform: uppercase;
+}
+.audit-points-major-count {
+    float: right;
+    font-weight: 600;
+    font-size: 0.74rem;
+    letter-spacing: 0.03em;
+    opacity: 0.85;
+    text-transform: none;
+}
+
+/* Sub-point row — quieter, with a small accent bar so it still reads as
+   a heading without competing with the major row above it */
+.audit-points-sub-row td {
+    background: #eef4f1;
+    color: var(--audit-primary-dark);
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 9px 16px 9px 12px !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.audit-points-sub-bar {
+    display: inline-block;
+    width: 4px;
+    height: 14px;
+    border-radius: 2px;
+    background: var(--audit-primary);
+    flex-shrink: 0;
+}
+
+/* Per-row rating strip: a 4px color bar on the left edge of each data row,
+   so risk/rating status is visible even without reading the cells */
+.audit-point-row { border-left: 4px solid transparent; }
+.audit-point-row.rating-border-SV { border-left-color: #1f7a4d; }
+.audit-point-row.rating-border-NI { border-left-color: #c98a2c; }
+.audit-point-row.rating-border-UN { border-left-color: #c94f4f; }
+.audit-point-row.rating-border-NA { border-left-color: #9aa5a1; }
+.audit-point-row.rating-border-none { border-left-color: transparent; }
+
+.audit-points-table tbody tr.audit-point-row:hover { background: #fafcfb; }
+
+.audit-weight-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--audit-primary-dark);
+    background: #eef4f1;
+    padding: 4px 10px;
+    border-radius: 999px;
+}
+
+.audit-point-cell p { margin: 0; font-size: 0.92rem; line-height: 1.45; }
+
+/* Result — a colored chip that echoes the rating color, instead of plain text */
+.audit-result-chip {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    line-height: 1.25;
+}
+.audit-result-chip strong { font-size: 0.92rem; }
+.audit-result-chip span { font-size: 0.74rem; opacity: 0.85; }
+.audit-result-chip.result-SV { background: #e4f3ea; border-color: #bfe2cd; color: #17453a; }
+.audit-result-chip.result-NI { background: #fbf0da; border-color: #f0dca0; color: #8a6416; }
+.audit-result-chip.result-UN { background: #fbe4e4; border-color: #f3bcbc; color: #8f2b23; }
+.audit-result-chip.result-NA { background: #eef0f0; border-color: #dde1e0; color: #374151; }
+.audit-result-empty { font-size: 0.82rem; color: var(--audit-muted); font-style: italic; }
+
+/* Mobile: collapse the table into labeled cards, like the admin theme */
+@media (max-width: 780px) {
+    .audit-points-table { min-width: 0; }
+    .audit-points-table thead { display: none; }
+
+    .audit-points-table,
+    .audit-points-table tbody,
+    .audit-points-table tr,
+    .audit-points-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .audit-points-table tbody tr.audit-point-row {
+        border: 1px solid var(--audit-border);
+        border-left: 4px solid transparent;
+        border-radius: 10px;
+        margin: 10px;
+        overflow: hidden;
+    }
+    .audit-points-table tbody tr.audit-point-row.rating-border-SV { border-left-color: #1f7a4d; }
+    .audit-points-table tbody tr.audit-point-row.rating-border-NI { border-left-color: #c98a2c; }
+    .audit-points-table tbody tr.audit-point-row.rating-border-UN { border-left-color: #c94f4f; }
+    .audit-points-table tbody tr.audit-point-row.rating-border-NA { border-left-color: #9aa5a1; }
+
+    .audit-points-table tbody tr.audit-point-row td {
+        border-bottom: 1px dashed var(--audit-border);
+        padding: 10px 14px;
+    }
+    .audit-points-table tbody tr.audit-point-row td:last-child {
+        border-bottom: none;
+    }
+
+    .audit-points-table td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--audit-muted);
+        margin-bottom: 4px;
+    }
+
+    .audit-points-major-row,
+    .audit-points-sub-row { margin: 0; }
+    .audit-points-major-row td,
+    .audit-points-sub-row td { border-radius: 0; }
+    .audit-points-major-count { float: none; display: block; margin-top: 2px; }
+}
+.audit-observation-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--audit-border);
+    background: var(--audit-bg);
+    color: var(--audit-primary-dark);
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+.audit-observation-btn:hover {
+    background: #eef4f1;
+    border-color: var(--audit-primary);
+}
+.audit-observation-btn.filled {
+    border-color: var(--audit-primary);
+    color: var(--audit-primary-dark);
+    background: #eef4f1;
+}
+.audit-observation-preview {
+    margin: 8px 0 0;
+    font-size: 0.8rem;
+    color: var(--audit-muted);
+    max-width: 260px;
+    line-height: 1.45;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Cash count trigger card (button instead of a permanently-open table)  */
+/* ---------------------------------------------------------------------- */
+.audit-cash-trigger-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.audit-cash-trigger-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.audit-cash-trigger-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--audit-muted);
+}
+.audit-cash-trigger-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--audit-text);
+    font-variant-numeric: tabular-nums;
+}
+.audit-cash-diff {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+.audit-cash-diff.ok { color: #1f7a4d; }
+.audit-cash-diff.off { color: #c94f4f; }
+
+/* ---------------------------------------------------------------------- */
+/* Generic modal (Observation / Cash Count)                              */
+/* ---------------------------------------------------------------------- */
+.audit-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 26, 24, 0.5);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 300;
+}
+.audit-modal {
+    width: min(94vw, 640px);
+    max-height: 88vh;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.audit-modal.audit-modal-wide { width: min(96vw, 900px); }
+
+.audit-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--audit-border);
+    flex-shrink: 0;
+}
+.audit-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 1.02rem;
+    color: var(--audit-text);
+}
+.audit-modal-title svg { color: var(--audit-primary); }
+
+.audit-modal-close {
+    border: none;
+    background: var(--audit-bg);
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--audit-muted);
+    flex-shrink: 0;
+}
+.audit-modal-close:hover { background: #fbe4e4; color: var(--audit-danger); }
+
+.audit-modal-body {
+    padding: 18px 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+.audit-modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid var(--audit-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+}
+.audit-modal-point-meta { margin-bottom: 12px; }
+.audit-modal-point-meta p {
+    margin: 2px 0 0;
+    color: var(--audit-text);
+    font-size: 0.9rem;
+}
+.audit-modal-textarea {
+    width: 100%;
+    min-height: 180px;
+    border: 1px solid var(--audit-border);
+    border-radius: 10px;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 0.92rem;
+    resize: vertical;
+    background: var(--audit-bg);
+    box-sizing: border-box;
+}
+.audit-modal-textarea:focus {
+    outline: 2px solid var(--audit-primary);
+    outline-offset: 1px;
+    background: #fff;
+}
+
+@media print {
+    .audit-modal-overlay { display: none !important; }
+}
+
+/* ========================================================================
+   CASH COUNTER v2 — "counting tray" layout: a live register-style ticker,
+   a tactile grid of denomination cards with +/- steppers (instead of a
+   plain data-entry table), redesigned foreign-currency cards, and a
+   dedicated report-figures section. Replaces the old cash table styling.
+   ======================================================================== */
+
+/* Live totals ticker, pinned right under the modal header */
+.cash-ticker {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    background: var(--excel-green-dark);
+    color: #fff;
+    flex-shrink: 0;
+}
+.cash-ticker-block {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.cash-ticker-block span {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.65;
+}
+.cash-ticker-block strong {
+    font-size: 1.1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    font-family: "Courier New", ui-monospace, monospace;
+}
+.cash-ticker-op {
+    font-size: 1rem;
+    opacity: 0.5;
+    font-weight: 700;
+}
+.cash-ticker-diff {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+.cash-ticker-diff strong {
+    font-family: "Courier New", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+}
+.cash-ticker-diff span { font-size: 0.78rem; opacity: 0.85; }
+.cash-ticker-diff.off { background: rgba(31, 122, 77, 0.35); color: #baf0cf; }
+.cash-ticker-diff.ok { background: rgba(201, 79, 79, 0.35); color: #ffd1d1; }
+
+@media (max-width: 560px) {
+    .cash-ticker { gap: 10px; padding: 12px 16px; }
+    .cash-ticker-diff { margin-left: 0; width: 100%; justify-content: center; }
+}
+
+/* Section framing inside the cash modal body */
+.cash-section { margin-bottom: 24px; }
+.cash-section:last-of-type { margin-bottom: 0; }
+.cash-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.cash-section-head h3 {
+    margin: 0;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--audit-muted);
+}
+.cash-section-subtotal {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--audit-text);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Denomination "tray" — tactile cards with steppers instead of table rows */
+.cash-denom-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+.cash-denom-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 10px;
+    border: 1.5px solid var(--audit-border);
+    border-radius: 12px;
+    background: var(--audit-bg);
+    position: relative;
+    overflow: hidden;
+}
+.cash-denom-card.kind-note { border-top: 3px solid var(--audit-primary); }
+.cash-denom-card.kind-coin { border-top: 3px solid var(--audit-warning); }
+
+.cash-denom-label {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--audit-text);
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+.cash-denom-label em {
+    font-style: normal;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--audit-muted);
+    text-transform: uppercase;
+}
+
+.cash-denom-stepper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+}
+.cash-denom-stepper button {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border: 1px solid var(--audit-border);
+    background: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--audit-primary-dark);
+}
+.cash-denom-stepper button:hover { background: #eef4f1; border-color: var(--audit-primary); }
+.cash-denom-stepper input {
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+    border: 1px solid var(--audit-border);
+    border-radius: 8px;
+    padding: 5px 4px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: inherit;
+    background: #fff;
+}
+.cash-denom-stepper input:focus {
+    outline: 2px solid var(--audit-primary);
+    outline-offset: 1px;
+}
+
+.cash-denom-subtotal {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--audit-primary-dark);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Foreign currency — compact cards instead of bare table rows */
+.cash-fc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.cash-fc-card {
+    display: grid;
+    grid-template-columns: 1.4fr 0.8fr 1fr auto;
+    align-items: end;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--audit-border);
+    border-radius: 10px;
+    background: var(--audit-bg);
+}
+.cash-fc-currency {
+    border: 1px solid var(--audit-border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    background: #fff;
+    align-self: center;
+}
+.cash-fc-field { display: flex; flex-direction: column; gap: 3px; }
+.cash-fc-field label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--audit-muted);
+}
+.cash-fc-field input {
+    border: 1px solid var(--audit-border);
+    border-radius: 8px;
+    padding: 7px 8px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    background: #fff;
+}
+.cash-fc-line-total {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--audit-primary-dark);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 560px) {
+    .cash-fc-card {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "currency currency"
+            "qty value"
+            "total total";
+    }
+    .cash-fc-currency { grid-area: currency; }
+    .cash-fc-line-total { grid-area: total; text-align: right; }
+}
+
+/* Report figures */
+.cash-report-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.cash-report-grid .audit-field { flex: 1 1 200px; }
+
+.cash-denom-image-wrap {
+    width: 100%;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.cash-denom-image {
+    display: block;
+    max-width: 150px;
+    max-height: 78px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+/* Coins */
+.cash-denom-card.kind-coin .cash-denom-image {
+    width: 68px;
+    height: 68px;
+    object-fit: contain;
+}
+
+/* Notes */
+.cash-denom-card.kind-note .cash-denom-image {
+    max-width: 150px;
+    max-height: 75px;
+}
+
+
+
+/* =========================================================
+   CASH RECONCILIATION — PROFESSIONAL DISPLAY
+   ========================================================= */
+
+.cash-reconciliation-card {
+  margin-top: 24px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+/* ---------- Header ---------- */
+
+.cash-reconciliation-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 18px 22px;
+
+  margin: 0;
+
+  border-bottom: 1px solid #e5e7eb;
+
+  background: #f8fafc;
+
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.cash-reconciliation-currency {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 42px;
+  height: 26px;
+
+  padding: 0 10px;
+
+  border-radius: 6px;
+
+  background: #e2e8f0;
+  color: #334155;
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .05em;
+}
+
+/* ---------- Sections ---------- */
+
+.cash-reconciliation-section {
+  padding: 20px 22px 0;
+}
+
+.cash-reconciliation-section:last-of-type {
+  padding-bottom: 22px;
+}
+
+.cash-reconciliation-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 10px;
+}
+
+.cash-reconciliation-section-header h3 {
+  margin: 0;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  color: #334155;
+
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* ---------- Table ---------- */
+
+.cash-reconciliation-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.cash-reconciliation-table {
+  width: 100%;
+  min-width: 650px;
+
+  border-collapse: collapse;
+
+  background: #ffffff;
+}
+
+.cash-reconciliation-table th {
+  height: 42px;
+
+  padding: 9px 14px;
+
+  border-bottom: 1px solid #dbe2ea;
+
+  background: #f8fafc;
+
+  color: #64748b;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  text-transform: uppercase;
+  letter-spacing: .035em;
+
+  white-space: nowrap;
+}
+
+.cash-reconciliation-table td {
+  height: 42px;
+
+  padding: 9px 14px;
+
+  border-bottom: 1px solid #edf1f5;
+
+  color: #374151;
+
+  font-size: 13px;
+
+  background: #fff;
+}
+
+.cash-reconciliation-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.cash-reconciliation-table tbody tr:hover td {
+  background: #fafbfc;
+}
+
+/* S.No */
+
+.cash-reconciliation-table th:first-child,
+.cash-reconciliation-table td:first-child {
+  width: 65px;
+  text-align: center;
+  color: #64748b;
+}
+
+/* Quantity */
+
+.cash-reconciliation-table th:nth-child(4),
+.cash-reconciliation-table td:nth-child(4) {
+  width: 110px;
+  text-align: center;
+}
+
+/* Amount */
+
+.cash-reconciliation-table th:last-child,
+.cash-reconciliation-table td:last-child {
+  width: 160px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Currency / denomination */
+
+.cash-reconciliation-table td strong {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* ---------- Total Row ---------- */
+
+.cash-reconciliation-total-row td {
+  padding-top: 13px;
+  padding-bottom: 13px;
+
+  background: #f8fafc !important;
+
+  border-top: 1px solid #dbe2ea;
+  border-bottom: 0;
+
+  color: #1f2937;
+}
+
+.cash-reconciliation-total-row td:last-child {
+  font-size: 14px;
+}
+
+/* ---------- Summary ---------- */
+
+.cash-reconciliation-summary {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    34px
+    minmax(0, 1fr)
+    34px
+    minmax(0, 1fr);
+
+  align-items: stretch;
+
+  gap: 10px;
+
+  margin: 22px;
+
+  padding: 0;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+
+  overflow: hidden;
+
+  background: #fff;
+}
+
+.cash-summary-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  min-height: 90px;
+
+  padding: 16px 18px;
+}
+
+.cash-summary-item span {
+  margin-bottom: 7px;
+
+  color: #64748b;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.cash-summary-item strong {
+  color: #111827;
+
+  font-size: 21px;
+  font-weight: 800;
+
+  font-variant-numeric: tabular-nums;
+}
+
+.cash-summary-operation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #94a3b8;
+
+  font-size: 18px;
+  font-weight: 700;
+
+  background: #f8fafc;
+}
+
+/* ---------- Difference ---------- */
+
+.cash-summary-difference {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  min-height: 90px;
+
+  padding: 16px 18px;
+
+  border-left: 1px solid #e2e8f0;
+}
+
+.cash-summary-difference span {
+  margin-bottom: 7px;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.cash-summary-difference strong {
+  font-size: 21px;
+  font-weight: 800;
+
+  font-variant-numeric: tabular-nums;
+}
+
+/* Balanced */
+
+.cash-summary-difference.balanced {
+  background: #f0fdf4;
+}
+
+.cash-summary-difference.balanced span {
+  color: #15803d;
+}
+
+.cash-summary-difference.balanced strong {
+  color: #15803d;
+}
+
+/* Difference */
+
+.cash-summary-difference.difference {
+  background: #fff7ed;
+}
+
+.cash-summary-difference.difference span {
+  color: #c2410c;
+}
+
+.cash-summary-difference.difference strong {
+  color: #dc2626;
+}
+
+/* ---------- Remarks ---------- */
+
+.cash-reconciliation-remarks {
+  margin: 0 22px 22px;
+
+  padding: 14px 16px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+
+  background: #f8fafc;
+}
+
+.cash-reconciliation-remarks span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: #64748b;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.cash-reconciliation-remarks p {
+  margin: 0;
+
+  color: #374151;
+
+  font-size: 13px;
+  line-height: 1.6;
+
+  white-space: pre-wrap;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 800px) {
+  .cash-reconciliation-section {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .cash-reconciliation-summary {
+    grid-template-columns: 1fr;
+    gap: 0;
+
+    margin: 16px 14px;
+  }
+
+  .cash-summary-operation {
+    display: none;
+  }
+
+  .cash-summary-item {
+    min-height: auto;
+
+    padding: 14px 16px;
+
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .cash-summary-difference {
+    min-height: auto;
+
+    border-left: 0;
+  }
+
+  .cash-reconciliation-remarks {
+    margin-left: 14px;
+    margin-right: 14px;
+  }
+}
+
+
+
+
+/* ========================================================================
+   PRINT — Cash Reconciliation section, formatted and pushed to its own
+   final page(s), after the main findings table.
+   ======================================================================== */
+
+.audit-print-cash-page {
+    page-break-before: always;
+    break-before: page;
+}
+
+.audit-print-cash-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--excel-green);
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+}
+.audit-print-cash-heading h2 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--excel-green-dark);
+    letter-spacing: 0.01em;
+}
+.audit-print-cash-heading span {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #777;
+}
+
+.audit-print-cash-card {
+    border: 1px solid var(--excel-border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 22px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.audit-print-cash-card-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--excel-green);
+    color: #fff;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.audit-print-cash-diff {
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+.audit-print-cash-diff.balanced {
+    background: rgba(255, 255, 255, 0.18);
+    color: #eafff0;
+}
+.audit-print-cash-diff.off {
+    background: #fff;
+    color: #8f2b23;
+}
+
+.audit-print-cash-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 0;
+}
+@media print {
+    .audit-print-cash-grid { grid-template-columns: 1.1fr 1fr; }
+}
+
+.audit-print-cash-col {
+    padding: 12px 14px;
+}
+.audit-print-cash-col + .audit-print-cash-col {
+    border-left: 1px solid var(--excel-border);
+}
+
+.audit-print-cash-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    margin-bottom: 12px;
+}
+.audit-print-cash-table:last-child { margin-bottom: 0; }
+
+.audit-print-cash-table caption {
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--excel-green-dark);
+    padding-bottom: 6px;
+}
+
+.audit-print-cash-table th,
+.audit-print-cash-table td {
+    border: 1px solid var(--excel-border);
+    padding: 5px 8px;
+    text-align: left;
+}
+
+.audit-print-cash-table thead th {
+    background: var(--excel-header-bg);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #555;
+    font-weight: 700;
+}
+
+.audit-print-cash-table tbody tr:nth-child(even) td {
+    background: var(--excel-band-bg);
+}
+
+.audit-print-cash-table td.num,
+.audit-print-cash-table th.num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.audit-print-cash-total-row td {
+    background: var(--excel-header-bg) !important;
+    font-weight: 700;
+    border-top: 1px solid var(--excel-green);
+}
+
+.audit-print-cash-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px 12px;
+    border: 1px solid var(--excel-border);
+    border-radius: 4px;
+    background: var(--excel-band-bg);
+    font-size: 11.5px;
+}
+.audit-print-cash-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.audit-print-cash-summary-row span:first-child { color: #555; }
+.audit-print-cash-summary-row strong {
+    font-variant-numeric: tabular-nums;
+}
+.audit-print-cash-summary-row.total {
+    border-top: 1px dashed var(--excel-border);
+    padding-top: 5px;
+    margin-top: 2px;
+}
+.audit-print-cash-summary-row.diff-ok strong { color: #1e5631; }
+.audit-print-cash-summary-row.diff-off strong { color: #8f2b23; }
+
+.audit-print-cash-remarks {
+    margin-top: 10px;
+    padding: 8px 10px;
+    border: 1px dashed var(--excel-border);
+    border-radius: 4px;
+    font-size: 11px;
+    color: #444;
+}
+.audit-print-cash-remarks span {
+    display: block;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #888;
+    margin-bottom: 3px;
+}
+
+@media (max-width: 780px) {
+    .audit-print-cash-grid { grid-template-columns: 1fr; }
+    .audit-print-cash-col + .audit-print-cash-col {
+        border-left: none;
+        border-top: 1px solid var(--excel-border);
+    }
+}
+
+/* ========================================================================
+   ORGANIZED LAYOUT ADDITIONS — cashier chips, sectioned cards, sticky
+   action bar, and a tidier cashier-tabs row inside the cash modal.
+   ======================================================================== */
+
+.audit-section-card {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.audit-section-block + .audit-section-block {
+    padding-top: 18px;
+    border-top: 1px dashed var(--audit-border);
+}
+
+.audit-section-block-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--audit-muted);
+    margin-bottom: 10px;
+}
+
+/* Info fields row (date / notes) — clearer grouping */
+.audit-info-fields-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+/* Sticky bottom action bar */
+.audit-actions-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--audit-border);
+    border-radius: var(--audit-radius);
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.06);
+}
+
+.audit-actions-bar-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.audit-actions-bar-summary .label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--audit-muted);
+}
+.audit-actions-bar-summary .value {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--audit-text);
+}
+
+.audit-actions-bar-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+@media (max-width: 640px) {
+    .audit-actions-bar { flex-direction: column; align-items: stretch; }
+    .audit-actions-bar-buttons { margin-left: 0; justify-content: stretch; }
+    .audit-actions-bar-buttons .audit-btn { flex: 1; justify-content: center; }
+}
+
+/* Cash modal footer — organized left/right groups */
+.audit-modal-footer-split {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+}
+
+/* ========================================================================
+   CASHIER CHIPS & TABS — horizontal-scroll versions (single source of
+   truth; do not duplicate these selectors elsewhere in this file).
+   ======================================================================== */
+
+/* Cashier list on the Audit Details page — horizontal scrollable chip cards */
+.audit-cashier-chip-list {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 6px 4px 14px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--audit-border) transparent;
+
+    mask-image: linear-gradient(to right, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+}
+
+.audit-cashier-chip-list::-webkit-scrollbar { height: 6px; }
+.audit-cashier-chip-list::-webkit-scrollbar-track { background: transparent; }
+.audit-cashier-chip-list::-webkit-scrollbar-thumb {
+    background: var(--audit-border);
+    border-radius: 999px;
+}
+.audit-cashier-chip-list::-webkit-scrollbar-thumb:hover { background: var(--audit-primary); }
+
+.audit-cashier-chip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+    width: 240px;
+    background: var(--audit-bg);
+    border: 1.5px solid var(--audit-border);
+    border-radius: 12px;
+    padding: 6px 8px 6px 6px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.audit-cashier-chip-row:focus-within {
+    border-color: var(--audit-primary);
+    box-shadow: 0 0 0 3px rgba(31, 95, 79, 0.12);
+    background: #fff;
+}
+
+.audit-cashier-chip-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--audit-primary);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.82rem;
+}
+
+.audit-cashier-chip-row input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    padding: 8px 4px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    outline: none;
+    color: var(--audit-text);
+}
+
+.audit-cashier-chip-remove {
+    border: none;
+    background: transparent;
+    color: var(--audit-danger);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.audit-cashier-chip-remove:hover { background: #fbe4e4; }
+
+.audit-add-cashier-btn-row {
+    display: flex;
+    justify-content: flex-start;
+    margin-top: 2px;
+}
+
+/* Cashier tabs row inside the Cash Count modal — horizontal scroll */
+.audit-cashier-tabs-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 14px 20px 14px;
+    margin: 0 -2px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--audit-border) transparent;
+    border-bottom: 1px solid var(--audit-border);
+
+    /* fade edges so it's obvious there's more to scroll */
+    mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+}
+
+.audit-cashier-tabs-row::-webkit-scrollbar { height: 6px; }
+.audit-cashier-tabs-row::-webkit-scrollbar-track { background: transparent; }
+.audit-cashier-tabs-row::-webkit-scrollbar-thumb {
+    background: var(--audit-border);
+    border-radius: 999px;
+}
+.audit-cashier-tabs-row::-webkit-scrollbar-thumb:hover { background: var(--audit-primary); }
+
+.audit-cashier-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    border: 1px solid var(--audit-border);
+    background: var(--audit-surface);
+    color: var(--audit-muted);
+    border-radius: 999px;
+    padding: 7px 10px 7px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .15s ease;
+}
+.audit-cashier-tab:hover {
+    background: var(--audit-bg);
+    border-color: var(--audit-primary);
+}
+.audit-cashier-tab.active {
+    background: var(--audit-primary);
+    border-color: var(--audit-primary);
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(31, 95, 79, 0.25);
+}
+
+.audit-cashier-tab-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    font-size: 0.7rem;
+}
+
+.audit-cashier-tab-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.08);
+    color: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.audit-cashier-tab.active .audit-cashier-tab-remove { background: rgba(255, 255, 255, 0.25); }
+.audit-cashier-tab-remove:hover { background: var(--audit-danger); color: #fff; }
+
+.audit-cashier-tab-add {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    border: 1px dashed var(--audit-primary);
+    background: transparent;
+    color: var(--audit-primary);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .15s ease;
+}
+.audit-cashier-tab-add:hover { background: #eef4f1; }
+
+
+
+/* ========================================================================
+   CASH RECONCILIATION — horizontal scroll when there are multiple
+   cashiers on the read-only AuditView page.
+   ======================================================================== */
+.cash-reconciliation-scroll {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 4px 16px;
+    margin-bottom: 4px;
+    scroll-behavior: smooth;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--audit-border) transparent;
+
+    mask-image: linear-gradient(to right, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+}
+
+.cash-reconciliation-scroll::-webkit-scrollbar { height: 7px; }
+.cash-reconciliation-scroll::-webkit-scrollbar-track { background: transparent; }
+.cash-reconciliation-scroll::-webkit-scrollbar-thumb {
+    background: var(--audit-border);
+    border-radius: 999px;
+}
+.cash-reconciliation-scroll::-webkit-scrollbar-thumb:hover { background: var(--audit-primary); }
+
+.cash-reconciliation-scroll .cash-reconciliation-card {
+    flex: 0 0 auto;
+    width: min(560px, 88vw);
+    margin-top: 0;
+    margin-bottom: 0;
+    scroll-snap-align: start;
+}
+
+/* If there's only one cashier, let the card take the full available width */
+.cash-reconciliation-scroll:has(.cash-reconciliation-card:only-child) .cash-reconciliation-card {
+    width: 100%;
+}
+
+@media (max-width: 600px) {
+    .cash-reconciliation-scroll .cash-reconciliation-card {
+        width: 92vw;
+    }
+}
+
+
+/* =========================================================
+   CASH RECONCILIATION - MULTIPLE CASHIERS
+   SAME SIZE AS BEFORE
+   ========================================================= */
+
+.cash-reconciliation-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 12px;
+}
+
+.cash-reconciliation-row {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 20px;
+
+  /* مهم: يخلي الكروت جنب بعض */
+  width: max-content;
+}
+
+
+/* نفس حجم الكارد السابق */
+.cash-reconciliation-row .cash-reconciliation-card {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 100%;
+
+  margin: 0;
+  box-sizing: border-box;
+}
+
+
+/* إذا عندك أكثر من كاشير:
+   كل كارد يأخذ نفس عرض الصفحة */
+.cash-reconciliation-row .cash-reconciliation-card {
+  flex-basis: calc(100vw - 60px);
+  min-width: calc(100vw - 60px);
+}
+
+
+/* الجداول داخل الكارد */
+.cash-reconciliation-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.cash-reconciliation-table {
+  width: 100%;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .cash-reconciliation-row {
+    gap: 14px;
+  }
+
+  .cash-reconciliation-row .cash-reconciliation-card {
+    flex: 0 0 calc(100vw - 30px);
+    min-width: calc(100vw - 30px);
+  }
+}/* Multiple cashiers — horizontal scroll */
+.cash-reconciliation-scroll {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 0 8px;
+  margin: 0;
+  align-items: flex-start;
+}
+
+/* Keep the old card size */
+.cash-reconciliation-scroll .cash-reconciliation-card {
+  flex: 0 0 100%;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+
+/* When there is more than one cashier,
+   each cashier keeps the same full card size */
+.cash-reconciliation-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.cash-reconciliation-scroll::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+}
+
+.cash-reconciliation-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cash-reconciliation-scroll-hint {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+
+  margin: 0 0 8px;
+
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.cash-reconciliation-scroll-hint span:first-child,
+.cash-reconciliation-scroll-hint span:last-child {
+  font-size: 18px;
+  color: #9ca3af;
+  font-weight: 600;
+}
+/* =========================================================
+   CASH RECONCILIATION - CASHIERS HORIZONTAL CAROUSEL
+========================================================= */
+
+.cash-reconciliation-wrapper {
+  position: relative;
+  width: 100%;
+  margin-top: 12px;
+}
+
+/* =========================================================
+   TOP HINT
+========================================================= */
+
+.cash-reconciliation-scroll-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  margin: 0 0 10px;
+
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+}
+
+.cash-hint-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 20px;
+  height: 20px;
+
+  border-radius: 50%;
+
+  background: #f3f4f6;
+  color: #374151;
+
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   SCROLL CONTAINER
+========================================================= */
+
+.cash-reconciliation-scroll {
+  display: flex;
+  gap: 14px;
+
+  width: 100%;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+
+  padding: 3px 48px 12px;
+
+  box-sizing: border-box;
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #c4c8ce transparent;
+}
+
+/* =========================================================
+   EACH CASHIER CARD
+========================================================= */
+
+.cash-reconciliation-scroll
+  .cash-reconciliation-card {
+  flex: 0 0 100%;
+  width: 100%;
+
+  min-width: 0;
+
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   ARROWS
+========================================================= */
+
+.cashier-nav-arrow {
+  position: absolute;
+
+  top: 50%;
+  transform: translateY(-50%);
+
+  z-index: 20;
+
+  width: 34px;
+  height: 34px;
+
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #d1d5db;
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.96);
+
+  color: #374151;
+
+  font-size: 20px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.cashier-nav-arrow:hover {
+  background: #1f2328;
+  border-color: #1f2328;
+  color: #ffffff;
+
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.14);
+
+  transform: translateY(-50%) scale(1.04);
+}
+
+.cashier-nav-arrow:active {
+  transform: translateY(-50%) scale(0.94);
+}
+
+.cashier-nav-left {
+  left: 6px;
+}
+
+.cashier-nav-right {
+  right: 6px;
+}
+
+/* =========================================================
+   SCROLLBAR - CHROME / EDGE
+========================================================= */
+
+.cash-reconciliation-scroll::-webkit-scrollbar {
+  height: 5px;
+}
+
+.cash-reconciliation-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cash-reconciliation-scroll::-webkit-scrollbar-thumb {
+  background: #c4c8ce;
+  border-radius: 20px;
+}
+
+.cash-reconciliation-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* =========================================================
+   CASHIER CARD - KEEP PREVIOUS SIZE
+========================================================= */
+
+.cash-reconciliation-card {
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   CASHIER HEADER
+========================================================= */
+
+.cash-reconciliation-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+}
+
+.cash-reconciliation-title > span:first-child {
+  min-width: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cash-reconciliation-currency {
+  flex-shrink: 0;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 0.5px;
+}
+
+/* =========================================================
+   TABLE AREA
+========================================================= */
+
+.cash-reconciliation-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+.cash-reconciliation-table-wrap::-webkit-scrollbar {
+  height: 4px;
+}
+
+.cash-reconciliation-table-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cash-reconciliation-table-wrap::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+
+/* =========================================================
+   SUMMARY
+========================================================= */
+
+.cash-reconciliation-summary {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cash-summary-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.cash-summary-operation {
+  flex: 0 0 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+/* =========================================================
+   REMARKS
+========================================================= */
+
+.cash-reconciliation-remarks {
+  margin-top: 10px;
+}
+
+.cash-reconciliation-remarks span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.cash-reconciliation-remarks p {
+  margin: 0;
+
+  color: #374151;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+  .cash-reconciliation-scroll {
+    gap: 10px;
+    padding-left: 42px;
+    padding-right: 42px;
+  }
+
+  .cashier-nav-arrow {
+    width: 32px;
+    height: 32px;
+
+    font-size: 18px;
+  }
+
+  .cashier-nav-left {
+    left: 4px;
+  }
+
+  .cashier-nav-right {
+    right: 4px;
+  }
+
+  .cash-reconciliation-scroll-hint {
+    font-size: 10px;
+  }
+
+  .cash-summary-item {
+    font-size: 11px;
+  }
+
+  .cash-summary-operation {
+    flex-basis: 22px;
+  }
+}
+
+/* =========================================================
+   VERY SMALL SCREENS
+========================================================= */
+
+@media (max-width: 480px) {
+  .cash-reconciliation-scroll {
+    padding-left: 38px;
+    padding-right: 38px;
+  }
+
+  .cash-reconciliation-scroll-hint {
+    gap: 5px;
+  }
+
+  .cash-hint-arrow {
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ========================================================================
+   B/C PARTICULARS ROWS (Paid Bills/IOUs, Reimbursement Statements)
+   + A/B/C/Grand-Total/Difference summary block
+   ======================================================================== */
+
+.cash-particulars-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.cash-particulars-row {
+    display: grid;
+    grid-template-columns: 1fr 140px auto;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 10px;
+    border: 1px solid var(--audit-border);
+    border-radius: 8px;
+    background: var(--audit-bg);
+}
+.cash-particulars-row input[type="text"],
+.cash-particulars-row input[type="number"] {
+    border: 1px solid var(--audit-border);
+    border-radius: 6px;
+    padding: 7px 9px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    background: #fff;
+}
+.cash-particulars-row input[type="number"] { text-align: right; }
+.cash-particulars-remove {
+    border: none;
+    background: transparent;
+    color: var(--audit-danger);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.cash-particulars-remove:hover { background: #fbe4e4; }
+.cash-particulars-add-row { display: flex; justify-content: flex-start; margin-top: 4px; }
+
+@media (max-width: 560px) {
+    .cash-particulars-row { grid-template-columns: 1fr; }
+}
+
+.cash-abc-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    border: 1px solid var(--audit-border);
+    border-radius: 10px;
+    background: var(--audit-bg);
+}
+.cash-abc-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 0.88rem;
+}
+.cash-abc-row .label { color: var(--audit-muted); font-weight: 600; }
+.cash-abc-row .value { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cash-abc-row.total {
+    border-top: 1px dashed var(--audit-border);
+    padding-top: 8px;
+    margin-top: 2px;
+}
+.cash-abc-row.grand .value { font-size: 1.05rem; color: var(--audit-primary-dark); }
+.cash-abc-row.diff.ok .value { color: #1f7a4d; }
+.cash-abc-row.diff.off .value { color: #c94f4f; }
+
+
+/* =========================================================
+   CASH RECONCILIATION HORIZONTAL SCROLL
+   ========================================================= */
+
+.cash-reconciliation-wrapper {
+  width: 100%;
+  margin: 24px 0;
+}
+
+/* ==================== TOP NAV ==================== */
+
+.cash-reconciliation-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 12px;
+  padding: 14px 18px;
+
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.cash-reconciliation-nav-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 180px;
+}
+
+.cash-nav-icon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+  background: #f3f4f6;
+
+  font-size: 20px;
+}
+
+.cash-reconciliation-nav-title strong {
+  display: block;
+  font-size: 15px;
+  color: #111827;
+}
+
+.cash-reconciliation-nav-title small {
+  display: block;
+  margin-top: 2px;
+
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ==================== CONTROLS ==================== */
+
+.cash-reconciliation-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cash-nav-btn {
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: #374151;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.cash-nav-btn:hover {
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
+}
+
+.cash-nav-btn:active {
+  transform: scale(0.94);
+}
+
+.cash-scroll-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 7px 12px;
+
+  border-radius: 20px;
+  background: #f9fafb;
+
+  color: #6b7280;
+
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.cash-scroll-arrow {
+  font-size: 16px;
+  color: #374151;
+  font-weight: 700;
+}
+
+/* ==================== HORIZONTAL SCROLL ==================== */
+
+.cash-reconciliation-scroll {
+  display: flex;
+  gap: 20px;
+
+  width: 100%;
+
+  overflow-x: auto;
+  overflow-y: visible;
+
+  padding: 4px 4px 18px;
+
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+
+  scrollbar-width: thin;
+  scrollbar-color: #9ca3af #f3f4f6;
+}
+
+/* Chrome / Edge / Safari */
+
+.cash-reconciliation-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.cash-reconciliation-scroll::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 20px;
+}
+
+.cash-reconciliation-scroll::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 20px;
+}
+
+.cash-reconciliation-scroll::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* ==================== CASHIER CARD ==================== */
+
+.cash-reconciliation-scroll
+  .cash-reconciliation-card {
+  flex: 0 0 calc(100% - 20px);
+
+  width: calc(100% - 20px);
+
+  max-width: none;
+  min-width: calc(100% - 20px);
+
+  margin: 0;
+
+  scroll-snap-align: start;
+
+  box-sizing: border-box;
+}
+
+/* ==================== CARD HEADER ==================== */
+
+.cashier-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cashier-number {
+  padding: 4px 9px;
+
+  border-radius: 20px;
+
+  background: #f3f4f6;
+  color: #6b7280;
+
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cashier-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cashier-balance-badge {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 5px 10px;
+
+  border-radius: 20px;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.cashier-balance-badge.balanced {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.cashier-balance-badge.difference {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+
+/* ==================== BOTTOM HINT ==================== */
+
+.cash-reconciliation-bottom-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  margin-top: 4px;
+
+  color: #6b7280;
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.cash-reconciliation-bottom-hint span:first-child,
+.cash-reconciliation-bottom-hint span:last-child {
+  font-size: 18px;
+  color: #374151;
+  font-weight: 700;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  .cash-reconciliation-nav {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .cash-reconciliation-nav-title {
+    justify-content: center;
+  }
+
+  .cash-reconciliation-controls {
+    justify-content: center;
+  }
+
+  .cash-scroll-hint {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .cash-reconciliation-scroll {
+    gap: 12px;
+  }
+
+  .cash-reconciliation-scroll
+    .cash-reconciliation-card {
+    flex: 0 0 92%;
+    width: 92%;
+    min-width: 92%;
+  }
+
+  .cashier-title-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .cashier-header-right {
+    margin-top: 8px;
+  }
+
+}
+
+/* =========================================================
+   VERY SMALL SCREENS
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+  .cash-reconciliation-scroll
+    .cash-reconciliation-card {
+    flex: 0 0 94%;
+    width: 94%;
+    min-width: 94%;
+  }
+
+  .cash-reconciliation-controls {
+    width: 100%;
+  }
+
+  .cash-nav-btn {
+    flex: 0 0 40px;
+  }
+
+  .cash-scroll-hint {
+    font-size: 10px;
+    padding: 7px 8px;
+  }
+
+}
+.cash-reconciliation-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center !important;
+  gap: 12px;
+  width: 100%;
+  margin: 10px auto 16px;
+}
+
+.cash-scroll-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.cash-nav-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
