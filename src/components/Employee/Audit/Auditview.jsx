@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useLocation, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import {
@@ -11,6 +11,8 @@ import {
   FiRotateCcw,
   FiCheckCircle,
 } from "react-icons/fi";
+
+import { FaMoneyBillWave } from "react-icons/fa";
 
 import auditServices from "../../../services/AuditorServices";
 import { useAuth } from "../../Authcontext/Authcontext";
@@ -31,11 +33,11 @@ const WORKFLOW_STEPS = [
 ];
 
 const BHD_DENOMINATIONS = [
-  { key: "20", label: "20", value: 20 },
-  { key: "10", label: "10", value: 10 },
-  { key: "5", label: "5", value: 5 },
-  { key: "1", label: "1", value: 1 },
-  { key: "0.500", label: ".500", value: 0.5 },
+  { key: "20", label: "20.000", value: 20 },
+  { key: "10", label: "10.000", value: 10 },
+  { key: "5", label: "5.000", value: 5 },
+  { key: "1", label: "1.000", value: 1 },
+  { key: "0.500", label: "0.500", value: 0.5 },
   { key: "0.100", label: "0.100", value: 0.1 },
   { key: "0.050", label: "0.050", value: 0.05 },
   { key: "0.025", label: "0.025", value: 0.025 },
@@ -72,7 +74,11 @@ const formatDateDisplay = (value) => {
   if (!value) return "-";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "-";
-  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  return d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 };
 
 const getRatingLabel = (risk) => {
@@ -109,7 +115,10 @@ const buildReportSections = (evaluations) => {
       subsections.push({
         number: `${majorIndex}.${subIndex}`,
         name: subName,
-        items: items.map((it, i) => ({ ...it, number: `${majorIndex}.${subIndex}.${i + 1}` })),
+        items: items.map((it, i) => ({
+          ...it,
+          number: `${majorIndex}.${subIndex}.${i + 1}`,
+        })),
       });
     });
 
@@ -117,6 +126,50 @@ const buildReportSections = (evaluations) => {
   });
 
   return sections;
+};
+
+// A = physical cash (denoms + foreign currency), B = paid bills/IOUs,
+// C = statements sent for reimbursement to office. Grand Total (A+B+C)
+// is compared against the report figures to get the difference.
+const computeCashierTotals = (cc) => {
+  const denomTotal = BHD_DENOMINATIONS.reduce(
+    (sum, d) => sum + Number(cc.denominations?.[d.key] || 0) * d.value,
+    0,
+  );
+
+  const fcTotal = (cc.foreignCurrency || []).reduce(
+    (sum, fc) => sum + (Number(fc.qty) || 0) * (Number(fc.value) || 0),
+    0,
+  );
+
+  const countedTotal = denomTotal + fcTotal; // A
+
+  const paidBillsTotal = (cc.paidBills || []).reduce(
+    (sum, b) => sum + (Number(b.amount) || 0),
+    0,
+  ); // B
+
+  const reimbursementsTotal = (cc.reimbursements || []).reduce(
+    (sum, r) => sum + (Number(r.amount) || 0),
+    0,
+  ); // C
+
+  const grandTotal = countedTotal + paidBillsTotal + reimbursementsTotal; // A+B+C
+
+  const reportTotal =
+    (Number(cc.tillFloat) || 0) + (Number(cc.saleCashPerReport) || 0);
+  const difference = grandTotal - reportTotal;
+
+  return {
+    denomTotal,
+    fcTotal,
+    countedTotal,
+    paidBillsTotal,
+    reimbursementsTotal,
+    grandTotal,
+    reportTotal,
+    difference,
+  };
 };
 
 const AuditView = () => {
@@ -132,6 +185,7 @@ const AuditView = () => {
   const isAuditor = user?.RoleID === 4;
 
   const [audit, setAudit] = useState(null);
+  const cashScrollRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [working, setWorking] = useState(false);
@@ -145,42 +199,47 @@ const AuditView = () => {
   const [showRejectBox, setShowRejectBox] = useState(false);
 
   const [opsCommentInput, setOpsCommentInput] = useState("");
-  const [auditManagerNoteInput, setAuditManagerNoteInput] = useState(""); 
-  
-  
+  const [auditManagerNoteInput, setAuditManagerNoteInput] = useState("");
+
   const loadAudit = async () => {
     try {
-        setLoading(true);
-        setError("");
+      setLoading(true);
+      setError("");
 
-        const data = await auditServices.show(id);
+      const data = await auditServices.show(id);
 
-        setAudit(data);
+      setAudit(data);
 
-        setDraftEvaluations(
-            Array.isArray(data.evaluations)
-                ? data.evaluations
-                : []
-        );
+      setDraftEvaluations(
+        Array.isArray(data.evaluations) ? data.evaluations : [],
+      );
 
-        setOpsCommentInput(data.actionnote ?? "");
+      setOpsCommentInput(data.actionnote ?? "");
 
-        setAuditManagerNoteInput(
-            data.auditmanagernote ?? ""
-        );
-
+      setAuditManagerNoteInput(data.auditmanagernote ?? "");
     } catch (err) {
-        console.error("Load Audit Error:", err);
-        setError(err.message || "Could not load this audit.");
+      console.error("Load Audit Error:", err);
+      setError(err.message || "Could not load this audit.");
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
 
   useEffect(() => {
     loadAudit();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // ---------------------------------------------------------------------
+  // IMPORTANT: this useMemo must run on every render, in the same order,
+  // regardless of loading/error state — so it lives here, before any
+  // early "return" below. Never put hooks after a conditional return.
+  // ---------------------------------------------------------------------
+  const cashierCashCounts = useMemo(() => {
+    if (!audit?.cashcount) return [];
+    if (Array.isArray(audit.cashcount)) return audit.cashcount;
+    return [{ name: audit.cashiername || "Cashier", ...audit.cashcount }];
+  }, [audit]);
 
   const runUpdate = async (payload, successMessage) => {
     try {
@@ -198,7 +257,8 @@ const AuditView = () => {
       if (successMessage) notify("success", successMessage);
     } catch (err) {
       console.error("Update Audit Error:", err);
-      const message = err?.message || "Could not save your changes. Please try again.";
+      const message =
+        err?.message || "Could not save your changes. Please try again.";
       setError(message);
       notify("error", message);
     } finally {
@@ -211,7 +271,12 @@ const AuditView = () => {
 
     if (field === "Rating") {
       const { score, percentage } = scoreFromRating(value);
-      updated[index] = { ...updated[index], Rating: value, Score: score, Percentage: percentage };
+      updated[index] = {
+        ...updated[index],
+        Rating: value,
+        Score: score,
+        Percentage: percentage,
+      };
     } else {
       updated[index] = { ...updated[index], [field]: value };
     }
@@ -221,24 +286,36 @@ const AuditView = () => {
 
   /* -------------------- AUDIT MANAGER -------------------- */
   const requestRevision = () => {
-    if (!revisionReason.trim()) { setError("Please enter a revision reason."); return; }
-    runUpdate({ status: "Needs Revision", revisionReason: revisionReason.trim() }, "Revision requested — sent back to the auditor.");
+    if (!revisionReason.trim()) {
+      setError("Please enter a revision reason.");
+      return;
+    }
+    runUpdate(
+      { status: "Needs Revision", revisionReason: revisionReason.trim() },
+      "Revision requested — sent back to the auditor.",
+    );
   };
 
   const rejectAudit = () => {
-    if (!rejectionReason.trim()) { setError("Please enter a rejection reason."); return; }
-    runUpdate({ status: "Rejected", rejectionReason: rejectionReason.trim() }, "Audit rejected.");
+    if (!rejectionReason.trim()) {
+      setError("Please enter a rejection reason.");
+      return;
+    }
+    runUpdate(
+      { status: "Rejected", rejectionReason: rejectionReason.trim() },
+      "Audit rejected.",
+    );
   };
 
   const approveAndForward = () => {
     runUpdate(
-        {
-            auditManagerNote: auditManagerNoteInput.trim(),
-            status: "Forwarded"
-        },
-        "Approved and forwarded to Ops Manager."
+      {
+        auditManagerNote: auditManagerNoteInput.trim(),
+        status: "Forwarded",
+      },
+      "Approved and forwarded to Ops Manager.",
     );
-};
+  };
 
   /* -------------------- AUDITOR -------------------- */
   const saveDraft = () => {
@@ -246,15 +323,21 @@ const AuditView = () => {
   };
 
   const resubmitAudit = () => {
-    runUpdate({ evaluations: draftEvaluations, status: "Submitted" }, "Audit resubmitted for review.");
+    runUpdate(
+      { evaluations: draftEvaluations, status: "Submitted" },
+      "Audit resubmitted for review.",
+    );
   };
 
   /* -------------------- OPS MANAGER -------------------- */
   const sendToStoreManager = () => {
-    if (!opsCommentInput.trim()) { setError("Please add a comment before sending to the Store Manager."); return; }
+    if (!opsCommentInput.trim()) {
+      setError("Please add a comment before sending to the Store Manager.");
+      return;
+    }
     runUpdate(
       { actionNote: opsCommentInput.trim(), status: "Sent to Store" },
-      "Sent to Store Manager."
+      "Sent to Store Manager.",
     );
   };
 
@@ -264,7 +347,10 @@ const AuditView = () => {
   };
 
   const markCompleted = () => {
-    runUpdate({ evaluations: draftEvaluations, status: "Completed" }, "Audit marked as completed.");
+    runUpdate(
+      { evaluations: draftEvaluations, status: "Completed" },
+      "Audit marked as completed.",
+    );
   };
 
   const handlePrint = () => window.print();
@@ -298,21 +384,23 @@ const AuditView = () => {
     status === "Rejected"
       ? -1
       : status === "Needs Revision"
-      ? 0
-      : WORKFLOW_STEPS.findIndex((s) => s.key === status);
+        ? 0
+        : WORKFLOW_STEPS.findIndex((s) => s.key === status);
 
   const reportSections = buildReportSections(draftEvaluations);
   const ratingLabel = getRatingLabel(audit.risklevel);
-  const cc = audit.cashcount;
 
   return (
     <div className="audit-page">
       {/* ==================== HEADER ==================== */}
       <div className="audit-header no-print">
         <div>
-          <h1>{audit.storecode} — {audit.brandname}</h1>
+          <h1>
+            {audit.storecode} — {audit.brandname}
+          </h1>
           <p className="subtitle">
-            {audit.locationname} · Audited {new Date(audit.auditdate).toLocaleDateString()}
+            {audit.locationname} · Audited{" "}
+            {new Date(audit.auditdate).toLocaleDateString()}
           </p>
         </div>
 
@@ -326,7 +414,7 @@ const AuditView = () => {
         </div>
       </div>
 
-{/* ==================== STATUS STEPPER ==================== */}
+      {/* ==================== STATUS STEPPER ==================== */}
       {status === "Draft" ? (
         <div className="audit-draft-status-banner no-print">
           📝 This audit is still a draft. Go to "Start an Audit" → "Continue a
@@ -339,11 +427,17 @@ const AuditView = () => {
             const isActive = i === currentStepIndex;
             return (
               <div className="audit-step-wrap" key={step.key}>
-                <div className={`audit-step ${isDone ? "done" : ""} ${isActive ? "active" : ""}`}>
-                  <span className="audit-step-circle">{isDone ? <FiCheck /> : i + 1}</span>
+                <div
+                  className={`audit-step ${isDone ? "done" : ""} ${isActive ? "active" : ""}`}
+                >
+                  <span className="audit-step-circle">
+                    {isDone ? <FiCheck /> : i + 1}
+                  </span>
                   <span className="audit-step-label">{step.label}</span>
                   {isActive && status === "Needs Revision" && (
-                    <span className="audit-badge Moderate audit-step-chip">Needs Revision</span>
+                    <span className="audit-badge Moderate audit-step-chip">
+                      Needs Revision
+                    </span>
                   )}
                 </div>
                 {i < WORKFLOW_STEPS.length - 1 && (
@@ -360,7 +454,10 @@ const AuditView = () => {
       )}
 
       {location.state?.justCreated && (
-        <div className="audit-card no-print" style={{ background: "#e4f3ea", borderColor: "#bfe2cd" }}>
+        <div
+          className="audit-card no-print"
+          style={{ background: "#e4f3ea", borderColor: "#bfe2cd" }}
+        >
           Audit submitted successfully.
         </div>
       )}
@@ -370,15 +467,31 @@ const AuditView = () => {
       {/* ==================== SUMMARY ==================== */}
       <div className="audit-card no-print">
         <div className="audit-store-summary">
-          <div className="audit-store-item"><span>Cashier</span><strong>{audit.cashiername}</strong></div>
-          <div className="audit-store-item"><span>Auditor</span><strong>{audit.auditorname}</strong></div>
-          <div className="audit-store-item"><span>Store Manager</span><strong>{audit.storemanagername || "-"}</strong></div>
-          <div className="audit-store-item"><span>Ops Manager</span><strong>{audit.opsmanagername}</strong></div>
-          <div className="audit-store-item"><span>Status</span><strong>{status}</strong></div>
+          <div className="audit-store-item">
+            <span>Cashier</span>
+            <strong>{audit.cashiername}</strong>
+          </div>
+          <div className="audit-store-item">
+            <span>Auditor</span>
+            <strong>{audit.auditorname}</strong>
+          </div>
+          <div className="audit-store-item">
+            <span>Store Manager</span>
+            <strong>{audit.storemanagername || "-"}</strong>
+          </div>
+          <div className="audit-store-item">
+            <span>Ops Manager</span>
+            <strong>{audit.opsmanagername}</strong>
+          </div>
+          <div className="audit-store-item">
+            <span>Status</span>
+            <strong>{status}</strong>
+          </div>
           <div className="audit-store-item">
             <span>Final Percentage</span>
             <strong>
-              {audit.finalpercentage !== null && audit.finalpercentage !== undefined
+              {audit.finalpercentage !== null &&
+              audit.finalpercentage !== undefined
                 ? `${Number(audit.finalpercentage).toFixed(2)}%`
                 : "-"}
             </strong>
@@ -386,7 +499,11 @@ const AuditView = () => {
           <div className="audit-store-item">
             <span>Overall Rating</span>
             <strong>
-              {audit.risklevel && <span className={`audit-badge ${audit.risklevel}`}>{ratingLabel}</span>}
+              {audit.risklevel && (
+                <span className={`audit-badge ${audit.risklevel}`}>
+                  {ratingLabel}
+                </span>
+              )}
             </strong>
           </div>
         </div>
@@ -399,16 +516,14 @@ const AuditView = () => {
         )}
 
         {audit.auditmanagernote && (
-    <div style={{ marginTop: 14 }}>
-        <span className="audit-note-label">
-            Audit Manager Comment
-        </span>
+          <div style={{ marginTop: 14 }}>
+            <span className="audit-note-label">Audit Manager Comment</span>
 
-        <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>
-            {audit.auditmanagernote}
-        </p>
-    </div>
-)}
+            <p style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+              {audit.auditmanagernote}
+            </p>
+          </div>
+        )}
 
         {audit.revisionreason && (
           <div style={{ marginTop: 14 }}>
@@ -425,54 +540,595 @@ const AuditView = () => {
         )}
       </div>
 
-      {/* ==================== CASH COUNT (READ-ONLY) ==================== */}
-      {cc && (
-        <div className="audit-card no-print">
-          <div className="audit-card-title" style={{ fontWeight: 700, marginBottom: 10 }}>
-            Cash Count (BHD)
-          </div>
-          <div className="audit-store-summary">
-            <div className="audit-store-item">
-              <span>Tills Float</span>
-              <strong>{Number(cc.tillFloat || 0).toFixed(3)}</strong>
+      {/* ==================== CASH COUNT (READ-ONLY, SCREEN) — one card per cashier ==================== */}
+      {/* ==================== CASH COUNT ==================== */}
+      {cashierCashCounts.length > 0 && (
+        <div className="cash-reconciliation-wrapper no-print">
+          {/* ==================== SCROLL HEADER ==================== */}
+          <div className="cash-reconciliation-nav">
+            <div className="cash-reconciliation-nav-title">
+              <span className="cash-nav-icon">
+                <FaMoneyBillWave />
+              </span>
+              <div>
+                <strong>Cash Reconciliation</strong>
+                <small>
+                  {cashierCashCounts.length > 1
+                    ? ` ${cashierCashCounts.length} Cashiers`
+                    : "Cashier"}
+                </small>
+              </div>
             </div>
-            <div className="audit-store-item">
-              <span>Sale Cash (report)</span>
-              <strong>{Number(cc.saleCashPerReport || 0).toFixed(3)}</strong>
-            </div>
-            {cc.remarks && (
-              <div className="audit-store-item">
-                <span>Remarks</span>
-                <strong>{cc.remarks}</strong>
+
+            {cashierCashCounts.length > 1 && (
+              <div className="cash-reconciliation-controls">
+                <button
+                  type="button"
+                  className="cash-nav-btn"
+                  onClick={() => {
+                    if (!cashScrollRef.current) return;
+
+                    cashScrollRef.current.scrollBy({
+                      left: -420,
+                      behavior: "smooth",
+                    });
+                  }}
+                  title="Previous Cashier"
+                >
+                  <FiArrowLeft />
+                </button>
+
+                <div className="cash-scroll-hint">
+                  <span className="cash-scroll-arrow">←</span>
+                  <span>Swipe or use arrows to view other cashiers</span>
+                  <span className="cash-scroll-arrow">→</span>
+                </div>
+
+                <button
+                  type="button"
+                  className="cash-nav-btn"
+                  onClick={() => {
+                    if (!cashScrollRef.current) return;
+
+                    cashScrollRef.current.scrollBy({
+                      left: 420,
+                      behavior: "smooth",
+                    });
+                  }}
+                  title="Next Cashier"
+                >
+                  <FiArrowLeft
+                    style={{
+                      transform: "rotate(180deg)",
+                    }}
+                  />
+                </button>
               </div>
             )}
           </div>
+
+          {/* ==================== CASHIER CARDS SCROLL ==================== */}
+          <div className="cash-reconciliation-scroll" ref={cashScrollRef}>
+            {cashierCashCounts.map((cc, ccIndex) => {
+              const totals = computeCashierTotals(cc);
+
+              const {
+                denomTotal,
+                paidBillsTotal,
+                reimbursementsTotal,
+                grandTotal,
+                reportTotal,
+                difference,
+              } = totals;
+
+              const isBalanced = Math.abs(difference) < 0.0005;
+
+              const paidBillsRows = (cc.paidBills || []).filter(
+                (b) => b.particular || b.amount,
+              );
+
+              const reimbursementRows = (cc.reimbursements || []).filter(
+                (r) => r.particular || r.amount,
+              );
+
+              return (
+                <div
+                  className="cash-reconciliation-card audit-card no-print"
+                  key={`cc-${ccIndex}`}
+                >
+                  {/* ==================== CARD HEADER ==================== */}
+                  <div className="audit-card-title cash-reconciliation-title">
+                    <div className="cashier-title-wrapper">
+                      <span>
+                        Cash Reconciliation —{" "}
+                        {cc.name || `Cashier ${ccIndex + 1}`}
+                      </span>
+
+                      <small className="cashier-number">
+                        Cashier {ccIndex + 1} of {cashierCashCounts.length}
+                      </small>
+                    </div>
+
+                    <div className="cashier-header-right">
+                      <span
+                        className={`cashier-balance-badge ${
+                          isBalanced ? "balanced" : "difference"
+                        }`}
+                      >
+                        {isBalanced
+                          ? "✓ Balanced"
+                          : `${difference > 0 ? "+" : ""}${difference.toFixed(3)} BHD`}
+                      </span>
+
+                      <span className="cash-reconciliation-currency">BHD</span>
+                    </div>
+                  </div>
+
+                  {/* ==================== NOTES & COINS ==================== */}
+                  <div className="cash-reconciliation-section">
+                    <div className="cash-reconciliation-section-header">
+                      <h3>Notes &amp; Coins</h3>
+                    </div>
+
+                    <div className="cash-reconciliation-table-wrap">
+                      <table className="audit-table cash-reconciliation-table">
+                        <thead>
+                          <tr>
+                            <th>S.No</th>
+                            <th>Denomination</th>
+                            <th>Type</th>
+                            <th>Quantity</th>
+                            <th>Amount (BHD)</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {BHD_DENOMINATIONS.filter(
+                            (d) => Number(cc.denominations?.[d.key] || 0) > 0,
+                          ).map((d, index) => {
+                            const qty = Number(cc.denominations?.[d.key] || 0);
+
+                            const amount = qty * d.value;
+
+                            return (
+                              <tr key={d.key}>
+                                <td>{index + 1}</td>
+
+                                <td>
+                                  <strong>{d.label}</strong>
+                                </td>
+
+                                <td>
+                                  {Number(d.value) >= 0.5 ? "Note" : "Coin"}
+                                </td>
+
+                                <td>{qty}</td>
+
+                                <td>{amount.toFixed(3)}</td>
+                              </tr>
+                            );
+                          })}
+
+                          <tr className="cash-reconciliation-total-row">
+                            <td colSpan={4}>
+                              <strong>Notes &amp; Coins Total</strong>
+                            </td>
+
+                            <td>
+                              <strong>{denomTotal.toFixed(3)}</strong>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* ==================== FOREIGN CURRENCY ==================== */}
+                  {(cc.foreignCurrency || []).some(
+                    (fc) => fc.label || fc.qty || fc.value,
+                  ) && (
+                    <div className="cash-reconciliation-section">
+                      <div className="cash-reconciliation-section-header">
+                        <h3>Foreign Currency</h3>
+                      </div>
+
+                      <div className="cash-reconciliation-table-wrap">
+                        <table className="audit-table cash-reconciliation-table">
+                          <thead>
+                            <tr>
+                              <th>S.No</th>
+                              <th>Currency</th>
+                              <th>Quantity</th>
+                              <th>Value / Unit (BHD)</th>
+                              <th>Amount (BHD)</th>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            {(cc.foreignCurrency || [])
+                              .filter((fc) => fc.label || fc.qty || fc.value)
+                              .map((fc, index) => {
+                                const qty = Number(fc.qty) || 0;
+
+                                const value = Number(fc.value) || 0;
+
+                                const amount = qty * value;
+
+                                return (
+                                  <tr key={`fc-${index}`}>
+                                    <td>{index + 1}</td>
+
+                                    <td>
+                                      <strong>{fc.label || "FC"}</strong>
+                                    </td>
+
+                                    <td>{qty}</td>
+
+                                    <td>{value.toFixed(3)}</td>
+
+                                    <td>{amount.toFixed(3)}</td>
+                                  </tr>
+                                );
+                              })}
+
+                            <tr className="cash-reconciliation-total-row">
+                              <td colSpan={4}>
+                                <strong>Foreign Currency Total</strong>
+                              </td>
+
+                              <td>
+                                <strong>{totals.fcTotal.toFixed(3)}</strong>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ==================== PAID BILLS ==================== */}
+                  <div className="cash-reconciliation-section">
+                    <div className="cash-reconciliation-section-header">
+                      <h3>B. Paid Bills / IOUs</h3>
+                    </div>
+
+                    <div className="cash-reconciliation-table-wrap">
+                      <table className="audit-table cash-reconciliation-table">
+                        <thead>
+                          <tr>
+                            <th>S.No</th>
+                            <th>Particulars</th>
+                            <th>Amount (BHD)</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {paidBillsRows.length === 0 && (
+                            <tr>
+                              <td
+                                colSpan={3}
+                                style={{
+                                  textAlign: "center",
+                                  color: "#9ca3af",
+                                }}
+                              >
+                                No paid bills / IOUs recorded.
+                              </td>
+                            </tr>
+                          )}
+
+                          {paidBillsRows.map((b, index) => (
+                            <tr key={`bill-${ccIndex}-${index}`}>
+                              <td>{index + 1}</td>
+
+                              <td>{b.particular || "-"}</td>
+
+                              <td>{(Number(b.amount) || 0).toFixed(3)}</td>
+                            </tr>
+                          ))}
+
+                          <tr className="cash-reconciliation-total-row">
+                            <td colSpan={2}>
+                              <strong>Total (B)</strong>
+                            </td>
+
+                            <td>
+                              <strong>{paidBillsTotal.toFixed(3)}</strong>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* ==================== REIMBURSEMENT ==================== */}
+                  <div className="cash-reconciliation-section">
+                    <div className="cash-reconciliation-section-header">
+                      <h3>C. Statements Sent for Reimbursement to Office</h3>
+                    </div>
+
+                    <div className="cash-reconciliation-table-wrap">
+                      <table className="audit-table cash-reconciliation-table">
+                        <thead>
+                          <tr>
+                            <th>S.No</th>
+                            <th>Particulars</th>
+                            <th>Amount (BHD)</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {reimbursementRows.length === 0 && (
+                            <tr>
+                              <td
+                                colSpan={3}
+                                style={{
+                                  textAlign: "center",
+                                  color: "#9ca3af",
+                                }}
+                              >
+                                No reimbursement statements recorded.
+                              </td>
+                            </tr>
+                          )}
+
+                          {reimbursementRows.map((r, index) => (
+                            <tr key={`reimb-${ccIndex}-${index}`}>
+                              <td>{index + 1}</td>
+
+                              <td>{r.particular || "-"}</td>
+
+                              <td>{(Number(r.amount) || 0).toFixed(3)}</td>
+                            </tr>
+                          ))}
+
+                          <tr className="cash-reconciliation-total-row">
+                            <td colSpan={2}>
+                              <strong>Total (C)</strong>
+                            </td>
+
+                            <td>
+                              <strong>{reimbursementsTotal.toFixed(3)}</strong>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* ==================== REPORT FIGURES ==================== */}
+                  <div className="cash-reconciliation-section">
+                    <div className="cash-reconciliation-section-header">
+                      <h3>Report Figures</h3>
+                    </div>
+
+                    <div className="cash-reconciliation-table-wrap">
+                      <table className="audit-table cash-reconciliation-table">
+                        <thead>
+                          <tr>
+                            <th>Figure</th>
+                            <th>Amount (BHD)</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          <tr>
+                            <td>
+                              <strong>Tills Float</strong>
+                            </td>
+
+                            <td>{Number(cc.tillFloat || 0).toFixed(3)}</td>
+                          </tr>
+
+                          <tr>
+                            <td>
+                              <strong>Sale Cash (per report)</strong>
+                            </td>
+
+                            <td>
+                              {Number(cc.saleCashPerReport || 0).toFixed(3)}
+                            </td>
+                          </tr>
+
+                          <tr className="cash-reconciliation-total-row">
+                            <td>
+                              <strong>Total as per Report</strong>
+                            </td>
+
+                            <td>
+                              <strong>{reportTotal.toFixed(3)}</strong>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* ==================== SUMMARY ==================== */}
+                  <div className="cash-reconciliation-section">
+                    <div className="cash-reconciliation-section-header">
+                      <h3>Summary</h3>
+                    </div>
+
+                    <div className="cash-abc-summary">
+                      <div className="cash-abc-row">
+                        <span className="label">Total Cash (A)</span>
+
+                        <span className="value">
+                          {totals.countedTotal.toFixed(3)} BHD
+                        </span>
+                      </div>
+
+                      <div className="cash-abc-row">
+                        <span className="label">Paid Bills / IOUs (B)</span>
+
+                        <span className="value">
+                          {paidBillsTotal.toFixed(3)} BHD
+                        </span>
+                      </div>
+
+                      <div className="cash-abc-row">
+                        <span className="label">
+                          Statements Sent for Reimbursement (C)
+                        </span>
+
+                        <span className="value">
+                          {reimbursementsTotal.toFixed(3)} BHD
+                        </span>
+                      </div>
+
+                      <div className="cash-abc-row total grand">
+                        <span className="label">Grand Total (A+B+C)</span>
+
+                        <span className="value">
+                          {grandTotal.toFixed(3)} BHD
+                        </span>
+                      </div>
+
+                      <div className="cash-abc-row">
+                        <span className="label">As per Report</span>
+
+                        <span className="value">
+                          {reportTotal.toFixed(3)} BHD
+                        </span>
+                      </div>
+
+                      <div
+                        className={`cash-abc-row total diff ${
+                          isBalanced ? "ok" : "off"
+                        }`}
+                      >
+                        <span className="label">
+                          Difference Excess/Shortage BD
+                        </span>
+
+                        <span className="value">
+                          {difference > 0 ? "+" : ""}
+                          {difference.toFixed(3)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ==================== REMARKS ==================== */}
+                  {cc.remarks && (
+                    <div className="cash-reconciliation-remarks">
+                      <span>Remarks</span>
+                      <p>{cc.remarks}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="cash-reconciliation-nav-title"></div>
+          {cashierCashCounts.length > 1 && (
+            <div className="cash-reconciliation-controls">
+              <button
+                type="button"
+                className="cash-nav-btn"
+                onClick={() => {
+                  if (!cashScrollRef.current) return;
+                  cashScrollRef.current.scrollBy({
+                    left: -420,
+                    behavior: "smooth",
+                  });
+                }}
+                title="Previous Cashier"
+              >
+                <FiArrowLeft />
+              </button>
+              <div className="cash-scroll-hint">
+                <span className="cash-scroll-arrow">←</span>
+                <span>Swipe or use arrows to view other cashiers</span>
+                <span className="cash-scroll-arrow">→</span>
+              </div>
+
+              <button
+                type="button"
+                className="cash-nav-btn"
+                onClick={() => {
+                  if (!cashScrollRef.current) return;
+
+                  cashScrollRef.current.scrollBy({
+                    left: 420,
+                    behavior: "smooth",
+                  });
+                }}
+                title="Next Cashier"
+              >
+                <FiArrowLeft
+                  style={{
+                    transform: "rotate(180deg)",
+                  }}
+                />
+              </button>
+            </div>
+          )}
+
+          {/* ==================== BOTTOM SCROLL HINT ==================== */}
+          {cashierCashCounts.length > 1 && (
+            <div className="cash-reconciliation-bottom-hint">
+              <span>←</span>
+              <span>
+                Use the arrows or scroll horizontally to view the next cashier
+              </span>
+              <span>→</span>
+            </div>
+          )}
         </div>
       )}
 
       {/* ==================== AUDIT MANAGER ACTIONS ==================== */}
       {isAuditManager && status === "Submitted" && (
         <div className="audit-card no-print">
-
           <div className="audit-field">
-    <label>Audit Manager Comment</label>
+            <label>Audit Manager Comment</label>
 
-    <textarea
-        value={auditManagerNoteInput}
-        onChange={(e) => setAuditManagerNoteInput(e.target.value)}
-        placeholder="Write your review comment before forwarding to Ops Manager..."
-        rows={4}
-    />
-</div>
+            <textarea
+              value={auditManagerNoteInput}
+              onChange={(e) => setAuditManagerNoteInput(e.target.value)}
+              placeholder="Write your review comment before forwarding to Ops Manager..."
+              rows={4}
+            />
+          </div>
 
-          <div className="audit-actions" style={{ justifyContent: "flex-start", marginTop: 0, marginBottom: showRevisionBox || showRejectBox ? 12 : 0 }}>
-            <button className="audit-btn secondary" onClick={() => { setShowRevisionBox((v) => !v); setShowRejectBox(false); setError(""); }} disabled={working}>
+          <div
+            className="audit-actions"
+            style={{
+              justifyContent: "flex-start",
+              marginTop: 0,
+              marginBottom: showRevisionBox || showRejectBox ? 12 : 0,
+            }}
+          >
+            <button
+              className="audit-btn secondary"
+              onClick={() => {
+                setShowRevisionBox((v) => !v);
+                setShowRejectBox(false);
+                setError("");
+              }}
+              disabled={working}
+            >
               <FiRotateCcw /> Request Revision
             </button>
-            <button className="audit-btn danger" onClick={() => { setShowRejectBox((v) => !v); setShowRevisionBox(false); setError(""); }} disabled={working}>
+            <button
+              className="audit-btn danger"
+              onClick={() => {
+                setShowRejectBox((v) => !v);
+                setShowRevisionBox(false);
+                setError("");
+              }}
+              disabled={working}
+            >
               <FiXCircle /> Reject
             </button>
-            <button className="audit-btn" onClick={approveAndForward} disabled={working}>
+            <button
+              className="audit-btn"
+              onClick={approveAndForward}
+              disabled={working}
+            >
               <FiCheckCircle /> {working ? "Processing…" : "Approve & Forward"}
             </button>
           </div>
@@ -481,9 +1137,18 @@ const AuditView = () => {
             <div style={{ marginTop: 14 }}>
               <div className="audit-field">
                 <label>Revision Reason</label>
-                <textarea value={revisionReason} onChange={(e) => setRevisionReason(e.target.value)} placeholder="Explain what the Auditor needs to review or correct..." />
+                <textarea
+                  value={revisionReason}
+                  onChange={(e) => setRevisionReason(e.target.value)}
+                  placeholder="Explain what the Auditor needs to review or correct..."
+                />
               </div>
-              <button className="audit-btn secondary" style={{ marginTop: 10 }} onClick={requestRevision} disabled={working || !revisionReason.trim()}>
+              <button
+                className="audit-btn secondary"
+                style={{ marginTop: 10 }}
+                onClick={requestRevision}
+                disabled={working || !revisionReason.trim()}
+              >
                 <FiSend /> {working ? "Sending…" : "Send Back to Auditor"}
               </button>
             </div>
@@ -493,9 +1158,18 @@ const AuditView = () => {
             <div style={{ marginTop: 14 }}>
               <div className="audit-field">
                 <label>Rejection Reason</label>
-                <textarea value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)} placeholder="Explain why this audit is being rejected..." />
+                <textarea
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Explain why this audit is being rejected..."
+                />
               </div>
-              <button className="audit-btn danger" style={{ marginTop: 10 }} onClick={rejectAudit} disabled={working || !rejectionReason.trim()}>
+              <button
+                className="audit-btn danger"
+                style={{ marginTop: 10 }}
+                onClick={rejectAudit}
+                disabled={working || !rejectionReason.trim()}
+              >
                 {working ? "Rejecting…" : "Confirm Reject"}
               </button>
             </div>
@@ -507,13 +1181,25 @@ const AuditView = () => {
       {isAuditor && status === "Needs Revision" && (
         <div className="audit-card no-print">
           <p style={{ marginTop: 0 }}>
-            The Audit Manager requested changes to this audit. Update your findings below, save your progress, then resubmit when ready.
+            The Audit Manager requested changes to this audit. Update your
+            findings below, save your progress, then resubmit when ready.
           </p>
-          <div className="audit-actions" style={{ justifyContent: "flex-start", marginTop: 0 }}>
-            <button className="audit-btn secondary" onClick={saveDraft} disabled={working}>
+          <div
+            className="audit-actions"
+            style={{ justifyContent: "flex-start", marginTop: 0 }}
+          >
+            <button
+              className="audit-btn secondary"
+              onClick={saveDraft}
+              disabled={working}
+            >
               <FiSave /> {working ? "Saving…" : "Save Draft"}
             </button>
-            <button className="audit-btn" onClick={resubmitAudit} disabled={working}>
+            <button
+              className="audit-btn"
+              onClick={resubmitAudit}
+              disabled={working}
+            >
               <FiSend /> {working ? "Resubmitting…" : "Submit for Review"}
             </button>
           </div>
@@ -524,7 +1210,8 @@ const AuditView = () => {
       {isOpsManager && status === "Forwarded" && (
         <div className="audit-card no-print">
           <p style={{ marginTop: 0 }}>
-            Review the audit and add your comment, then send it to the Store Manager to complete the action plan.
+            Review the audit and add your comment, then send it to the Store
+            Manager to complete the action plan.
           </p>
 
           <div className="audit-field">
@@ -536,8 +1223,15 @@ const AuditView = () => {
             />
           </div>
 
-          <div className="audit-actions" style={{ justifyContent: "flex-start", marginTop: 10 }}>
-            <button className="audit-btn" onClick={sendToStoreManager} disabled={working}>
+          <div
+            className="audit-actions"
+            style={{ justifyContent: "flex-start", marginTop: 10 }}
+          >
+            <button
+              className="audit-btn"
+              onClick={sendToStoreManager}
+              disabled={working}
+            >
               <FiSend /> {working ? "Sending…" : "Send to Store Manager"}
             </button>
           </div>
@@ -548,13 +1242,25 @@ const AuditView = () => {
       {isStoreManager && status === "Sent to Store" && (
         <div className="audit-card no-print">
           <p style={{ marginTop: 0 }}>
-            Add the corrective action plan and target date for each finding below, then mark the audit completed.
+            Add the corrective action plan and target date for each finding
+            below, then mark the audit completed.
           </p>
-          <div className="audit-actions" style={{ justifyContent: "flex-start", marginTop: 0 }}>
-            <button className="audit-btn secondary" onClick={saveActionPlan} disabled={working}>
+          <div
+            className="audit-actions"
+            style={{ justifyContent: "flex-start", marginTop: 0 }}
+          >
+            <button
+              className="audit-btn secondary"
+              onClick={saveActionPlan}
+              disabled={working}
+            >
               <FiSave /> {working ? "Saving…" : "Save Progress"}
             </button>
-            <button className="audit-btn" onClick={markCompleted} disabled={working}>
+            <button
+              className="audit-btn"
+              onClick={markCompleted}
+              disabled={working}
+            >
               <FiCheckCircle /> {working ? "Completing…" : "Mark Completed"}
             </button>
           </div>
@@ -563,10 +1269,14 @@ const AuditView = () => {
 
       {/* ==================== COMPLETED ==================== */}
       {status === "Completed" && (
-        <div className="audit-card no-print" style={{ background: "#e4f3ea", borderColor: "#bfe2cd" }}>
+        <div
+          className="audit-card no-print"
+          style={{ background: "#e4f3ea", borderColor: "#bfe2cd" }}
+        >
           <strong>Audit Completed</strong>
           <p style={{ marginBottom: 0 }}>
-            This audit has completed the full review process. Use "Print Report" for the formal document.
+            This audit has completed the full review process. Use "Print Report"
+            for the formal document.
           </p>
         </div>
       )}
@@ -590,18 +1300,35 @@ const AuditView = () => {
               <tr key={ev.EvaluationID}>
                 <td>
                   <div className="audit-point-cell">
-                    {ev.MajorCriteriaName && <span className="audit-point-major">{ev.MajorCriteriaName}</span>}
-                    {ev.SubPointCriteria && <span className="audit-point-sub">{ev.SubPointCriteria}</span>}
-                    <p>{ev.AuditComment || `Audit Point #${ev.AuditPointID}`}</p>
+                    {ev.MajorCriteriaName && (
+                      <span className="audit-point-major">
+                        {ev.MajorCriteriaName}
+                      </span>
+                    )}
+                    {ev.SubPointCriteria && (
+                      <span className="audit-point-sub">
+                        {ev.SubPointCriteria}
+                      </span>
+                    )}
+                    <p>
+                      {ev.AuditComment || `Audit Point #${ev.AuditPointID}`}
+                    </p>
                   </div>
                 </td>
 
                 <td>
                   {canEditFindings ? (
-                    <select value={ev.Rating || ""} onChange={(e) => handleDraftChange(index, "Rating", e.target.value)}>
+                    <select
+                      value={ev.Rating || ""}
+                      onChange={(e) =>
+                        handleDraftChange(index, "Rating", e.target.value)
+                      }
+                    >
                       <option value="">Select</option>
                       {RATING_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
                       ))}
                     </select>
                   ) : (
@@ -611,11 +1338,21 @@ const AuditView = () => {
 
                 <td>{ev.Score ?? "-"}</td>
 
-                <td>{ev.Percentage !== null && ev.Percentage !== undefined ? `${ev.Percentage}%` : "-"}</td>
+                <td>
+                  {ev.Percentage !== null && ev.Percentage !== undefined
+                    ? `${ev.Percentage}%`
+                    : "-"}
+                </td>
 
                 <td>
                   {canEditFindings ? (
-                    <textarea value={ev.Observation || ""} onChange={(e) => handleDraftChange(index, "Observation", e.target.value)} placeholder="Enter observation..." />
+                    <textarea
+                      value={ev.Observation || ""}
+                      onChange={(e) =>
+                        handleDraftChange(index, "Observation", e.target.value)
+                      }
+                      placeholder="Enter observation..."
+                    />
                   ) : (
                     ev.Observation || "-"
                   )}
@@ -623,7 +1360,13 @@ const AuditView = () => {
 
                 <td>
                   {canEditActionPlan ? (
-                    <textarea value={ev.ActionPlan || ""} onChange={(e) => handleDraftChange(index, "ActionPlan", e.target.value)} placeholder="Corrective action..." />
+                    <textarea
+                      value={ev.ActionPlan || ""}
+                      onChange={(e) =>
+                        handleDraftChange(index, "ActionPlan", e.target.value)
+                      }
+                      placeholder="Corrective action..."
+                    />
                   ) : (
                     ev.ActionPlan || "-"
                   )}
@@ -631,7 +1374,13 @@ const AuditView = () => {
 
                 <td>
                   {canEditActionPlan ? (
-                    <input type="date" value={toDateInputValue(ev.TargetDate)} onChange={(e) => handleDraftChange(index, "TargetDate", e.target.value)} />
+                    <input
+                      type="date"
+                      value={toDateInputValue(ev.TargetDate)}
+                      onChange={(e) =>
+                        handleDraftChange(index, "TargetDate", e.target.value)
+                      }
+                    />
                   ) : (
                     formatDateDisplay(ev.TargetDate)
                   )}
@@ -657,31 +1406,58 @@ const AuditView = () => {
 
           <div className="audit-print-rating">
             <span className="audit-print-rating-value">
-              {audit.finalpercentage !== null && audit.finalpercentage !== undefined
+              {audit.finalpercentage !== null &&
+              audit.finalpercentage !== undefined
                 ? `${Number(audit.finalpercentage).toFixed(2)}%`
                 : "-"}
             </span>
-            <span className={`audit-badge ${audit.risklevel || ""}`}>{ratingLabel}</span>
+            <span className={`audit-badge ${audit.risklevel || ""}`}>
+              {ratingLabel}
+            </span>
           </div>
         </div>
 
         <table className="audit-print-meta">
           <tbody>
             <tr>
-              <td><span>Store Name</span><strong>{audit.brandname}</strong></td>
-              <td><span>Audited By</span><strong>{audit.auditorname}</strong></td>
+              <td>
+                <span>Store Name</span>
+                <strong>{audit.brandname}</strong>
+              </td>
+              <td>
+                <span>Audited By</span>
+                <strong>{audit.auditorname}</strong>
+              </td>
             </tr>
             <tr>
-              <td><span>Store Location</span><strong>{audit.locationname}</strong></td>
-              <td><span>Store Manager</span><strong>{audit.storemanagername || "-"}</strong></td>
+              <td>
+                <span>Store Location</span>
+                <strong>{audit.locationname}</strong>
+              </td>
+              <td>
+                <span>Store Manager</span>
+                <strong>{audit.storemanagername || "-"}</strong>
+              </td>
             </tr>
             <tr>
-              <td><span>Store Code</span><strong>{audit.storecode}</strong></td>
-              <td><span>Ops Manager</span><strong>{audit.opsmanagername}</strong></td>
+              <td>
+                <span>Store Code</span>
+                <strong>{audit.storecode}</strong>
+              </td>
+              <td>
+                <span>Ops Manager</span>
+                <strong>{audit.opsmanagername}</strong>
+              </td>
             </tr>
             <tr>
-              <td><span>Audit Date</span><strong>{formatDateDisplay(audit.auditdate)}</strong></td>
-              <td><span>Cashier</span><strong>{audit.cashiername}</strong></td>
+              <td>
+                <span>Audit Date</span>
+                <strong>{formatDateDisplay(audit.auditdate)}</strong>
+              </td>
+              <td>
+                <span>Cashier</span>
+                <strong>{audit.cashiername}</strong>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -716,9 +1492,14 @@ const AuditView = () => {
                     </tr>
 
                     {sub.items.map((item) => {
-                      const weightApplied = item.Weightage !== null && item.Weightage !== undefined ? Number(item.Weightage) : null;
+                      const weightApplied =
+                        item.Weightage !== null && item.Weightage !== undefined
+                          ? Number(item.Weightage)
+                          : null;
                       const weightScore =
-                        weightApplied !== null && item.Percentage !== null && item.Percentage !== undefined
+                        weightApplied !== null &&
+                        item.Percentage !== null &&
+                        item.Percentage !== undefined
                           ? (weightApplied * Number(item.Percentage)) / 100
                           : null;
 
@@ -727,9 +1508,22 @@ const AuditView = () => {
                           <td>{item.number}</td>
                           <td>{item.AuditComment}</td>
                           <td>{item.Rating || "-"}</td>
-                          <td>{weightApplied !== null ? weightApplied.toFixed(2) : "-"}</td>
-                          <td>{weightScore !== null ? weightScore.toFixed(2) : "-"}</td>
-                          <td>{item.Percentage !== null && item.Percentage !== undefined ? `${item.Percentage}%` : "-"}</td>
+                          <td>
+                            {weightApplied !== null
+                              ? weightApplied.toFixed(2)
+                              : "-"}
+                          </td>
+                          <td>
+                            {weightScore !== null
+                              ? weightScore.toFixed(2)
+                              : "-"}
+                          </td>
+                          <td>
+                            {item.Percentage !== null &&
+                            item.Percentage !== undefined
+                              ? `${item.Percentage}%`
+                              : "-"}
+                          </td>
                           <td>{item.Observation || "-"}</td>
                           <td>{item.ActionPlan || "-"}</td>
                           <td>{formatDateDisplay(item.TargetDate)}</td>
@@ -742,53 +1536,6 @@ const AuditView = () => {
             ))}
           </tbody>
         </table>
-
-        {cc && (
-          <table className="audit-print-meta" style={{ marginTop: 16 }}>
-            <tbody>
-              <tr>
-                <td colSpan={2}>
-                  <span>Cash Reconciliation (BHD)</span>
-                </td>
-              </tr>
-
-              {BHD_DENOMINATIONS.map((d) => {
-                const qty = Number(cc.denominations?.[d.key] || 0);
-                const amount = qty * d.value;
-                if (!qty) return null;
-                return (
-                  <tr key={d.key}>
-                    <td><span>{d.label}</span><strong>{qty}</strong></td>
-                    <td><span>Amount</span><strong>{amount.toFixed(3)}</strong></td>
-                  </tr>
-                );
-              })}
-
-              {(cc.foreignCurrency || [])
-                .filter((fc) => fc.label || fc.qty)
-                .map((fc, i) => (
-                  <tr key={`fc-print-${i}`}>
-                    <td><span>{fc.label || "FC"}</span><strong>{fc.qty}</strong></td>
-                    <td><span>Amount</span><strong>{((Number(fc.qty) || 0) * (Number(fc.value) || 0)).toFixed(3)}</strong></td>
-                  </tr>
-                ))}
-
-              <tr>
-                <td><span>Tills Float</span><strong>{Number(cc.tillFloat || 0).toFixed(3)}</strong></td>
-                <td><span>Sale Cash (report)</span><strong>{Number(cc.saleCashPerReport || 0).toFixed(3)}</strong></td>
-              </tr>
-
-              {cc.remarks && (
-                <tr>
-                  <td colSpan={2}>
-                    <span>Remarks</span>
-                    <strong>{cc.remarks}</strong>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        )}
 
         <div className="audit-print-signoff audit-print-signoff-4">
           <div>
@@ -813,8 +1560,269 @@ const AuditView = () => {
           </div>
         </div>
 
+        {/* ================================================================ */}
+        {/* CASH RECONCILIATION — pushed to its own final page(s), one card  */}
+        {/* per cashier, with A/B/C/Grand Total sections.                    */}
+        {/* ================================================================ */}
+        {cashierCashCounts.length > 0 && (
+          <div className="audit-print-cash-page">
+            <div className="audit-print-cash-heading">
+              <h2>Cash Reconciliation</h2>
+              <span>
+                {audit.storecode} — {audit.brandname} ·{" "}
+                {formatDateDisplay(audit.auditdate)}
+              </span>
+            </div>
+
+            {cashierCashCounts.map((cc, ccIndex) => {
+              const totals = computeCashierTotals(cc);
+              const {
+                denomTotal,
+                fcTotal,
+                countedTotal,
+                paidBillsTotal,
+                reimbursementsTotal,
+                grandTotal,
+                reportTotal,
+                difference,
+              } = totals;
+
+              const isBalanced = Math.abs(difference) < 0.0005;
+
+              const denomRows = BHD_DENOMINATIONS.filter(
+                (d) => Number(cc.denominations?.[d.key] || 0) > 0,
+              );
+
+              const fcRows = (cc.foreignCurrency || []).filter(
+                (fc) => fc.label || fc.qty || fc.value,
+              );
+
+              const paidBillsRows = (cc.paidBills || []).filter(
+                (b) => b.particular || b.amount,
+              );
+
+              const reimbursementRows = (cc.reimbursements || []).filter(
+                (r) => r.particular || r.amount,
+              );
+
+              return (
+                <div
+                  className="audit-print-cash-card"
+                  key={`print-cc-${ccIndex}`}
+                >
+                  <div className="audit-print-cash-card-title">
+                    <span>{cc.name || `Cashier ${ccIndex + 1}`}</span>
+                    <span
+                      className={`audit-print-cash-diff ${isBalanced ? "balanced" : "off"}`}
+                    >
+                      {isBalanced
+                        ? "Balanced"
+                        : `${difference > 0 ? "+" : ""}${difference.toFixed(3)} BHD`}
+                    </span>
+                  </div>
+
+                  <div className="audit-print-cash-grid">
+                    {/* LEFT COLUMN — notes & coins, foreign currency, B, C */}
+                    <div className="audit-print-cash-col">
+                      <table className="audit-print-cash-table">
+                        <caption>Notes &amp; Coins</caption>
+                        <thead>
+                          <tr>
+                            <th>Denom.</th>
+                            <th className="num">Qty</th>
+                            <th className="num">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {denomRows.length === 0 && (
+                            <tr>
+                              <td colSpan={3}>No notes or coins counted.</td>
+                            </tr>
+                          )}
+                          {denomRows.map((d) => {
+                            const qty = Number(cc.denominations?.[d.key] || 0);
+                            const amount = qty * d.value;
+                            return (
+                              <tr key={d.key}>
+                                <td>{d.label}</td>
+                                <td className="num">{qty}</td>
+                                <td className="num">{amount.toFixed(3)}</td>
+                              </tr>
+                            );
+                          })}
+                          <tr className="audit-print-cash-total-row">
+                            <td colSpan={2}>Total</td>
+                            <td className="num">{denomTotal.toFixed(3)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      {fcRows.length > 0 && (
+                        <table className="audit-print-cash-table">
+                          <caption>Foreign Currency</caption>
+                          <thead>
+                            <tr>
+                              <th>Currency</th>
+                              <th className="num">Qty</th>
+                              <th className="num">Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {fcRows.map((fc, i) => {
+                              const amount =
+                                (Number(fc.qty) || 0) * (Number(fc.value) || 0);
+                              return (
+                                <tr key={`fc-print-${ccIndex}-${i}`}>
+                                  <td>{fc.label || "FC"}</td>
+                                  <td className="num">{fc.qty || 0}</td>
+                                  <td className="num">{amount.toFixed(3)}</td>
+                                </tr>
+                              );
+                            })}
+                            <tr className="audit-print-cash-total-row">
+                              <td colSpan={2}>Total</td>
+                              <td className="num">{fcTotal.toFixed(3)}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      )}
+
+                      <table className="audit-print-cash-table">
+                        <caption>B. Paid Bills / IOUs</caption>
+                        <thead>
+                          <tr>
+                            <th>Particulars</th>
+                            <th className="num">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paidBillsRows.length === 0 && (
+                            <tr>
+                              <td colSpan={2}>No paid bills / IOUs.</td>
+                            </tr>
+                          )}
+                          {paidBillsRows.map((b, i) => (
+                            <tr key={`bill-print-${ccIndex}-${i}`}>
+                              <td>{b.particular || "-"}</td>
+                              <td className="num">
+                                {(Number(b.amount) || 0).toFixed(3)}
+                              </td>
+                            </tr>
+                          ))}
+                          <tr className="audit-print-cash-total-row">
+                            <td>Total (B)</td>
+                            <td className="num">{paidBillsTotal.toFixed(3)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <table className="audit-print-cash-table">
+                        <caption>C. Statements Sent for Reimbursement</caption>
+                        <thead>
+                          <tr>
+                            <th>Particulars</th>
+                            <th className="num">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reimbursementRows.length === 0 && (
+                            <tr>
+                              <td colSpan={2}>No reimbursement statements.</td>
+                            </tr>
+                          )}
+                          {reimbursementRows.map((r, i) => (
+                            <tr key={`reimb-print-${ccIndex}-${i}`}>
+                              <td>{r.particular || "-"}</td>
+                              <td className="num">
+                                {(Number(r.amount) || 0).toFixed(3)}
+                              </td>
+                            </tr>
+                          ))}
+                          <tr className="audit-print-cash-total-row">
+                            <td>Total (C)</td>
+                            <td className="num">
+                              {reimbursementsTotal.toFixed(3)}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* RIGHT COLUMN — report figures + full A/B/C/Grand summary + remarks */}
+                    <div className="audit-print-cash-col">
+                      <table className="audit-print-cash-table">
+                        <caption>Report Figures</caption>
+                        <tbody>
+                          <tr>
+                            <td>Tills Float</td>
+                            <td className="num">
+                              {Number(cc.tillFloat || 0).toFixed(3)}
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>Sale Cash (per report)</td>
+                            <td className="num">
+                              {Number(cc.saleCashPerReport || 0).toFixed(3)}
+                            </td>
+                          </tr>
+                          <tr className="audit-print-cash-total-row">
+                            <td>Total as per Report</td>
+                            <td className="num">{reportTotal.toFixed(3)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <div className="audit-print-cash-summary">
+                        <div className="audit-print-cash-summary-row">
+                          <span>Total Cash (A)</span>
+                          <strong>{countedTotal.toFixed(3)} BHD</strong>
+                        </div>
+                        <div className="audit-print-cash-summary-row">
+                          <span>Paid Bills / IOUs (B)</span>
+                          <strong>{paidBillsTotal.toFixed(3)} BHD</strong>
+                        </div>
+                        <div className="audit-print-cash-summary-row">
+                          <span>Statements for Reimbursement (C)</span>
+                          <strong>{reimbursementsTotal.toFixed(3)} BHD</strong>
+                        </div>
+                        <div className="audit-print-cash-summary-row total">
+                          <span>Grand Total (A+B+C)</span>
+                          <strong>{grandTotal.toFixed(3)} BHD</strong>
+                        </div>
+                        <div className="audit-print-cash-summary-row">
+                          <span>As per Report</span>
+                          <strong>{reportTotal.toFixed(3)} BHD</strong>
+                        </div>
+                        <div
+                          className={`audit-print-cash-summary-row total ${
+                            isBalanced ? "diff-ok" : "diff-off"
+                          }`}
+                        >
+                          <span>Difference Excess/Shortage BD</span>
+                          <strong>
+                            {difference > 0 ? "+" : ""}
+                            {difference.toFixed(3)} BHD
+                          </strong>
+                        </div>
+                      </div>
+
+                      {cc.remarks && (
+                        <div className="audit-print-cash-remarks">
+                          <span>Remarks</span>
+                          {cc.remarks}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <div className="audit-print-footer">
-          Apparel Group — Internal Audit &amp; Compliance Division · Confidential
+          Apparel Group — Internal Audit &amp; Compliance Division ·
+          Confidential
         </div>
       </div>
     </div>

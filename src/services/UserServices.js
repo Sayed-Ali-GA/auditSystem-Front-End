@@ -56,8 +56,19 @@ const apiRequest = async (path, options = {}, { skipAuthRedirect = false } = {})
 
 const userService = {
 
+    // دخول شخصي — Oracle ID + Password
     login: (credentials) => apiRequest(
         "/login",
+        {
+            method: "POST",
+            body: JSON.stringify(credentials)
+        },
+        { skipAuthRedirect: true }
+    ),
+
+
+    storeLogin: (credentials) => apiRequest(
+        "/store-login",
         {
             method: "POST",
             body: JSON.stringify(credentials)
@@ -92,7 +103,22 @@ const userService = {
     // Delete user
     remove: (userID) => apiRequest(`/${userID}`, {
         method: "DELETE"
-    })
+    }),
+
+
+    setStoreLogin: (storeSerial, password) => apiRequest(
+        `/stores/${storeSerial}/set-login`,
+        {
+            method: "PATCH",
+            body: JSON.stringify({ Password: password })
+        }
+    ),
+
+
+    clearStoreLogin: (storeSerial) => apiRequest(
+        `/stores/${storeSerial}/clear-login`,
+        { method: "PATCH" }
+    ),
 
 };
 

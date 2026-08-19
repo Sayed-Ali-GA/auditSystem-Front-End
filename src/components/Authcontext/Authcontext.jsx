@@ -19,7 +19,10 @@ const getUserFromToken = () => {
             OracleID: decoded.OracleID,
             RoleID: decoded.RoleID,
             LocationID: decoded.LocationID,
-            UserName: decoded.UserName
+            UserName: decoded.UserName,
+            // حساب دخول مربوط بالمتجر نفسه (وليس بشخص) — إن وُجد
+            StoreSerial: decoded.StoreSerial,
+            IsStoreAccount: decoded.IsStoreAccount || false,
         };
 
     } catch (error) {
@@ -56,7 +59,9 @@ export const AuthProvider = ({ children }) => {
             OracleID: decoded.OracleID,
             RoleID: decoded.RoleID,
             LocationID: decoded.LocationID,
-            UserName: decoded.UserName
+            UserName: decoded.UserName,
+            StoreSerial: decoded.StoreSerial,
+            IsStoreAccount: decoded.IsStoreAccount || false,
         };
 
 

@@ -5,8 +5,6 @@ import {
   FiEdit2,
   FiTrash2,
   FiPlus,
-  FiRotateCcw,
-  FiArchive,
 } from "react-icons/fi";
 
 import auditPointServices from "../../../services/AuditPointsServices";
@@ -34,76 +32,73 @@ const riskBadgeClass = (risk) => {
 
 const AuditPoint = () => {
   const [auditPoints, setAuditPoints] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [editingAuditPoint, setEditingAuditPoint] = useState(null);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
-  const [showArchived, setShowArchived] = useState(false);
-
-  // =========================
+  // =====================================================
   // LOAD AUDIT POINTS
-  // =========================
-  const loadAuditPoints = async (includeInactive) => {
+  // =====================================================
+  const loadAuditPoints = async () => {
     try {
       setLoading(true);
 
-      const data = await auditPointServices.index(includeInactive);
+      const data = await auditPointServices.index();
 
-      setAuditPoints(data);
+      setAuditPoints(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.log(error);
+      console.error("Load Audit Points Error:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Could not load audit points.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadAuditPoints(showArchived);
+    loadAuditPoints();
+  }, []);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showArchived]);
-
-  // =========================
+  // =====================================================
   // MODAL
-  // =========================
+  // =====================================================
   const openAddModal = () => {
     setEditingAuditPoint(null);
-
     setIsModalOpen(true);
   };
 
   const openEditModal = (auditPoint) => {
     setEditingAuditPoint(auditPoint);
-
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-
     setEditingAuditPoint(null);
   };
 
-  // =========================
+  // =====================================================
   // ADD / UPDATE
-  // =========================
+  // =====================================================
   const handleAddAuditPoint = async (auditPointData) => {
     try {
       if (editingAuditPoint) {
         const updatedAuditPoint = await auditPointServices.update(
           editingAuditPoint.auditpointid,
-          auditPointData,
+          auditPointData
         );
 
         setAuditPoints((prev) =>
           prev.map((item) =>
             item.auditpointid === editingAuditPoint.auditpointid
               ? updatedAuditPoint
-              : item,
-          ),
+              : item
+          )
         );
 
         Swal.fire({
@@ -126,7 +121,7 @@ const AuditPoint = () => {
 
       closeModal();
     } catch (error) {
-      console.log(error);
+      console.error("Save Audit Point Error:", error);
 
       Swal.fire({
         icon: "error",
@@ -136,78 +131,55 @@ const AuditPoint = () => {
     }
   };
 
-  // =========================
-  // ARCHIVE
-  // =========================
-  const handleArchiveAuditPoint = async (auditpointid) => {
+  // =====================================================
+  // DELETE AUDIT POINT — PERMANENT
+  // =====================================================
+  const handleDelete = async (auditpointid) => {
     const result = await Swal.fire({
-      title: "Archive this audit point?",
-      text: "It will be hidden from active audits but kept for historical records.",
+      title: "Delete this audit point permanently?",
+      text: "This cannot be undone. The audit point will be permanently removed.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, archive it!",
+      confirmButtonText: "Yes, delete permanently",
       cancelButtonText: "Cancel",
+      confirmButtonColor: "#d33",
     });
 
     if (!result.isConfirmed) return;
 
     try {
+      setDeletingId(auditpointid);
+
       await auditPointServices.remove(auditpointid);
 
       setAuditPoints((prev) =>
         prev.filter(
-          (item) => item.auditpointid !== auditpointid,
-        ),
+          (item) =>
+            Number(item.auditpointid) !== Number(auditpointid)
+        )
       );
 
       Swal.fire({
-        title: "Archived!",
-        text: "The audit point has been archived.",
         icon: "success",
+        title: "Deleted!",
+        text: "Audit point permanently deleted.",
       });
     } catch (error) {
-      console.log(error);
+      console.error("Delete Audit Point Error:", error);
 
       Swal.fire({
-        title: "Error!",
-        text: "Cannot archive this audit point.",
         icon: "error",
+        title: "Error!",
+        text: "Could not delete the audit point.",
       });
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  // =========================
-  // RESTORE
-  // =========================
-  const handleRestoreAuditPoint = async (auditpointid) => {
-    try {
-      await auditPointServices.restore(auditpointid);
-
-      setAuditPoints((prev) =>
-        prev.filter(
-          (item) => item.auditpointid !== auditpointid,
-        ),
-      );
-
-      Swal.fire({
-        title: "Restored!",
-        text: "The audit point is active again.",
-        icon: "success",
-      });
-    } catch (error) {
-      console.log(error);
-
-      Swal.fire({
-        title: "Error!",
-        text: "Could not restore this audit point.",
-        icon: "error",
-      });
-    }
-  };
-
-  // =========================
+  // =====================================================
   // LOADING
-  // =========================
+  // =====================================================
   if (loading) {
     return (
       <div className="ag-main">
@@ -216,9 +188,9 @@ const AuditPoint = () => {
     );
   }
 
-  // =========================
+  // =====================================================
   // UI
-  // =========================
+  // =====================================================
   return (
     <div className="ag-main">
       <PageHeader
@@ -226,29 +198,13 @@ const AuditPoint = () => {
         eyebrow="Audit setup"
         title="Audit Points"
         subtitle="Build the checklist auditors will follow during store visits."
-        actions={
-          <button
-            type="button"
-            className="ag-btn ag-btn-ghost ag-btn-sm"
-            onClick={() => setShowArchived((v) => !v)}
-          >
-            <FiArchive />
-
-            {showArchived
-              ? "Show active only"
-              : "Show archived"}
-          </button>
-        }
       />
 
       <div className="ag-card">
         <div className="ag-card-title-row">
           <div className="ag-card-title">
             <FiClipboard />
-
-            {showArchived
-              ? "All audit points (incl. archived)"
-              : "Active audit points"}
+            All audit points
           </div>
 
           <button
@@ -266,130 +222,87 @@ const AuditPoint = () => {
             <thead>
               <tr>
                 <th>#ID</th>
-
                 <th>Criteria</th>
-
                 <th>Sub point</th>
-
                 <th>Audit point</th>
-
                 <th>Risk matrix</th>
-
                 <th>Weightage</th>
-
-                <th>Status</th>
-
                 <th>Edit</th>
-
-                <th>Archive / Restore</th>
+                <th>Delete</th>
               </tr>
             </thead>
 
             <tbody>
-              {auditPoints.length === 0 && (
+              {auditPoints.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={9}
-                    className="ag-empty-state"
-                  >
-                    {showArchived
-                      ? "No audit points found."
-                      : "No active audit points yet."}
+                  <td colSpan={8} className="ag-empty-state">
+                    No audit points yet.
                   </td>
                 </tr>
-              )}
+              ) : (
+                auditPoints.map((item) => (
+                  <tr key={item.auditpointid}>
+                    <td data-label="#ID">
+                      {item.auditpointid}
+                    </td>
 
-              {auditPoints.map((item) => (
-                <tr key={item.auditpointid}>
-                  <td data-label="#ID">
-                    {item.auditpointid}
-                  </td>
+                    <td data-label="Criteria">
+                      {item.majorcriterianame}
+                    </td>
 
-                  <td data-label="Criteria">
-                    {item.majorcriterianame}
-                  </td>
+                    <td data-label="Sub point">
+                      {item.subpointcriteria}
+                    </td>
 
-                  <td data-label="Sub point">
-                    {item.subpointcriteria}
-                  </td>
+                    <td data-label="Audit point">
+                      {item.auditcomment}
+                    </td>
 
-                  <td data-label="Audit point">
-                    {item.auditcomment}
-                  </td>
-
-                  <td data-label="Risk matrix">
-                    <span
-                      className={riskBadgeClass(
-                        item.riskmatrix,
-                      )}
-                    >
-                      {item.riskmatrix}
-                    </span>
-                  </td>
-
-                  <td data-label="Weightage">
-                    {item.weightage}
-                  </td>
-
-                  <td data-label="Status">
-                    <span
-                      className={`ag-badge ${
-                        item.isactive
-                          ? "ag-badge-success"
-                          : "ag-badge-muted"
-                      }`}
-                    >
-                      {item.isactive
-                        ? "Active"
-                        : "Archived"}
-                    </span>
-                  </td>
-
-                  <td data-label="Edit">
-                    <div className="ag-row-actions">
-                      <button
-                        className="ag-icon-btn edit"
-                        title="Edit"
-                        onClick={() =>
-                          openEditModal(item)
-                        }
+                    <td data-label="Risk matrix">
+                      <span
+                        className={riskBadgeClass(item.riskmatrix)}
                       >
-                        <FiEdit2 />
-                      </button>
-                    </div>
-                  </td>
+                        {item.riskmatrix}
+                      </span>
+                    </td>
 
-                  <td data-label="Archive / Restore">
-                    <div className="ag-row-actions">
-                      {item.isactive ? (
+                    <td data-label="Weightage">
+                      {item.weightage}
+                    </td>
+
+                    <td data-label="Edit">
+                      <div className="ag-row-actions">
                         <button
+                          type="button"
+                          className="ag-icon-btn edit"
+                          title="Edit"
+                          onClick={() => openEditModal(item)}
+                        >
+                          <FiEdit2 />
+                        </button>
+                      </div>
+                    </td>
+
+                    <td data-label="Delete">
+                      <div className="ag-row-actions">
+                        <button
+                          type="button"
                           className="ag-icon-btn delete"
-                          title="Archive"
+                          title="Delete"
                           onClick={() =>
-                            handleArchiveAuditPoint(
-                              item.auditpointid,
-                            )
+                            handleDelete(item.auditpointid)
+                          }
+                          disabled={
+                            deletingId === item.auditpointid
                           }
                         >
                           <FiTrash2 />
                         </button>
-                      ) : (
-                        <button
-                          className="ag-icon-btn enable"
-                          title="Restore"
-                          onClick={() =>
-                            handleRestoreAuditPoint(
-                              item.auditpointid,
-                            )
-                          }
-                        >
-                          <FiRotateCcw />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

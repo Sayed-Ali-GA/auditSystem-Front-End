@@ -8,6 +8,11 @@
     align-items:center;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--ag-gray-200);
+
+    /* Keep the navbar pinned to the top of the viewport while scrolling */
+    position: sticky;
+    top: 0;
+    z-index: 50;
 }
 
 .navbar-left{

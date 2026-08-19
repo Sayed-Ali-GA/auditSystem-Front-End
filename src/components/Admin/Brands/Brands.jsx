@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-import { FiTag, FiEdit2, FiTrash2, FiPlus, FiRotateCcw, FiArchive } from "react-icons/fi";
+import {
+  FiTag,
+  FiEdit2,
+  FiTrash2,
+  FiPlus,
+} from "react-icons/fi";
 
 import BrandForm from "./BrandsForm";
 import brandService from "../../../services/BrandServices";
@@ -9,33 +14,43 @@ import LoadingState from "../Shared/LoadingState";
 import Modal from "../Shared/Modal";
 import "../Shared/theme.css";
 
-
 const Brands = () => {
-
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingBrand, setEditingBrand] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
-  const loadBrands = async (includeInactive) => {
+  // =====================================================
+  // LOAD BRANDS
+  // =====================================================
+  const loadBrands = async () => {
     try {
       setLoading(true);
-      const data = await brandService.index(includeInactive);
-      setBrands(data);
+
+      const data = await brandService.index();
+
+      setBrands(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.log(error);
+      console.error("Load Brands Error:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Could not load brands.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadBrands(showArchived);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showArchived]);
+    loadBrands();
+  }, []);
 
-
+  // =====================================================
+  // ADD / EDIT MODAL
+  // =====================================================
   const openAddModal = () => {
     setEditingBrand(null);
     setIsModalOpen(true);
@@ -51,7 +66,9 @@ const Brands = () => {
     setEditingBrand(null);
   };
 
-
+  // =====================================================
+  // ADD / UPDATE BRAND
+  // =====================================================
   const handleAddBrand = async (brandData) => {
     try {
       if (editingBrand) {
@@ -62,57 +79,89 @@ const Brands = () => {
 
         setBrands((prev) =>
           prev.map((brand) =>
-            brand.brandid === editingBrand.brandid ? updatedBrand : brand
+            brand.brandid === editingBrand.brandid
+              ? updatedBrand
+              : brand
           )
         );
 
-        Swal.fire({ icon: "success", title: "Updated!", text: "Brand updated successfully." });
+        Swal.fire({
+          icon: "success",
+          title: "Updated!",
+          text: "Brand updated successfully.",
+        });
       } else {
         const newBrand = await brandService.create(brandData);
+
         setBrands((prev) => [...prev, newBrand]);
-        Swal.fire({ icon: "success", title: "Added!", text: "Brand added successfully." });
+
+        Swal.fire({
+          icon: "success",
+          title: "Added!",
+          text: "Brand added successfully.",
+        });
       }
 
       closeModal();
     } catch (error) {
-      console.log(error);
-      Swal.fire({ icon: "error", title: "Error!", text: "Something went wrong." });
+      console.error("Save Brand Error:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Something went wrong.",
+      });
     }
   };
 
-
-  const handleArchiveBrand = async (brandid) => {
+  // =====================================================
+  // DELETE BRAND — PERMANENT
+  // =====================================================
+  const handleDelete = async (brandid) => {
     const result = await Swal.fire({
-      title: "Archive this brand?",
-      text: "It will be hidden from new stores but kept for historical reports.",
+      title: "Delete this brand permanently?",
+      text: "This cannot be undone. The brand will be permanently removed.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, archive it!",
+      confirmButtonText: "Yes, delete permanently",
       cancelButtonText: "Cancel",
+      confirmButtonColor: "#d33",
     });
 
     if (!result.isConfirmed) return;
 
     try {
+      setDeletingId(brandid);
+
       await brandService.remove(brandid);
-      setBrands((prev) => prev.filter((brand) => brand.brandid !== brandid));
-      Swal.fire({ title: "Archived!", text: "The brand has been archived.", icon: "success" });
+
+      setBrands((prev) =>
+        prev.filter(
+          (brand) => Number(brand.brandid) !== Number(brandid)
+        )
+      );
+
+      Swal.fire({
+        icon: "success",
+        title: "Deleted!",
+        text: "Brand permanently deleted.",
+      });
     } catch (error) {
-      Swal.fire({ title: "Error!", text: "Could not archive this brand.", icon: "error" });
+      console.error("Delete Brand Error:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Could not delete the brand.",
+      });
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  const handleRestoreBrand = async (brandid) => {
-    try {
-      await brandService.restore(brandid);
-      setBrands((prev) => prev.filter((brand) => brand.brandid !== brandid));
-      Swal.fire({ title: "Restored!", text: "The brand is active again.", icon: "success" });
-    } catch (error) {
-      Swal.fire({ title: "Error!", text: "Could not restore this brand.", icon: "error" });
-    }
-  };
-
-
+  // =====================================================
+  // LOADING
+  // =====================================================
   if (loading) {
     return (
       <div className="ag-main">
@@ -121,33 +170,23 @@ const Brands = () => {
     );
   }
 
-
+  // =====================================================
+  // UI
+  // =====================================================
   return (
     <div className="ag-main">
-
       <PageHeader
         icon={<FiTag />}
         eyebrow="Catalog"
         title="Brands"
         subtitle="Create and manage the brands used across stores and audits."
-        actions={
-          <button
-            type="button"
-            className="ag-btn ag-btn-ghost ag-btn-sm"
-            onClick={() => setShowArchived((v) => !v)}
-          >
-            <FiArchive />
-            {showArchived ? "Show active only" : "Show archived"}
-          </button>
-        }
       />
 
       <div className="ag-card">
-
         <div className="ag-card-title-row">
           <div className="ag-card-title">
             <FiTag />
-            {showArchived ? "All brands (incl. archived)" : "Active brands"}
+            All brands
           </div>
 
           <button
@@ -155,7 +194,8 @@ const Brands = () => {
             className="ag-btn ag-btn-primary ag-btn-sm"
             onClick={openAddModal}
           >
-            <FiPlus /> Add brand
+            <FiPlus />
+            Add brand
           </button>
         </div>
 
@@ -165,65 +205,58 @@ const Brands = () => {
               <tr>
                 <th>Sl. No.</th>
                 <th>Brand name</th>
-                <th>Status</th>
                 <th>Edit</th>
-                <th>Archive / Restore</th>
+                <th>Delete</th>
               </tr>
             </thead>
 
             <tbody>
-              {brands.length === 0 && (
+              {brands.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="ag-empty-state">No brands yet.</td>
+                  <td colSpan={4} className="ag-empty-state">
+                    No brands yet.
+                  </td>
                 </tr>
-              )}
+              ) : (
+                brands.map((brand, index) => (
+                  <tr key={brand.brandid}>
+                    <td data-label="Sl. No.">
+                      {index + 1}
+                    </td>
 
-              {brands.map((brand, index) => (
-                <tr key={brand.brandid}>
-                  <td data-label="Sl. No.">{index + 1}</td>
-                  <td data-label="Brand name">{brand.brandname}</td>
+                    <td data-label="Brand name">
+                      {brand.brandname}
+                    </td>
 
-                  <td data-label="Status">
-                    <span className={`ag-badge ${brand.isactive ? "ag-badge-success" : "ag-badge-muted"}`}>
-                      {brand.isactive ? "Active" : "Archived"}
-                    </span>
-                  </td>
-
-                  <td data-label="Edit">
-                    <div className="ag-row-actions">
-                      <button
-                        className="ag-icon-btn edit"
-                        title="Edit"
-                        onClick={() => openEditModal(brand)}
-                      >
-                        <FiEdit2 />
-                      </button>
-                    </div>
-                  </td>
-
-                  <td data-label="Archive / Restore">
-                    <div className="ag-row-actions">
-                      {brand.isactive ? (
+                    <td data-label="Edit">
+                      <div className="ag-row-actions">
                         <button
+                          type="button"
+                          className="ag-icon-btn edit"
+                          title="Edit"
+                          onClick={() => openEditModal(brand)}
+                        >
+                          <FiEdit2 />
+                        </button>
+                      </div>
+                    </td>
+
+                    <td data-label="Delete">
+                      <div className="ag-row-actions">
+                        <button
+                          type="button"
                           className="ag-icon-btn delete"
-                          title="Archive"
-                          onClick={() => handleArchiveBrand(brand.brandid)}
+                          title="Delete"
+                          onClick={() => handleDelete(brand.brandid)}
+                          disabled={deletingId === brand.brandid}
                         >
                           <FiTrash2 />
                         </button>
-                      ) : (
-                        <button
-                          className="ag-icon-btn enable"
-                          title="Restore"
-                          onClick={() => handleRestoreBrand(brand.brandid)}
-                        >
-                          <FiRotateCcw />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -240,10 +273,8 @@ const Brands = () => {
           editingBrand={editingBrand}
         />
       </Modal>
-
     </div>
   );
 };
-
 
 export default Brands;

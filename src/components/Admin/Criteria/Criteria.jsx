@@ -5,8 +5,6 @@ import {
   FiEdit2,
   FiTrash2,
   FiPlus,
-  FiRotateCcw,
-  FiArchive,
 } from "react-icons/fi";
 
 import criteriaService from "../../../services/CriteriaServices";
@@ -20,37 +18,37 @@ import "../Shared/theme.css";
 
 const Criteria = () => {
   const [criteria, setCriteria] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [editingCriteria, setEditingCriteria] = useState(null);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const [showArchived, setShowArchived] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   // =========================
   // LOAD CRITERIA
   // =========================
-  const loadCriteria = async (includeInactive) => {
+  const loadCriteria = async () => {
     try {
       setLoading(true);
 
-      const data = await criteriaService.index(includeInactive);
+      const data = await criteriaService.index();
 
-      setCriteria(data);
+      setCriteria(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.log(error);
+      console.error("Load Criteria Error:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Could not load criteria.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadCriteria(showArchived);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showArchived]);
+    loadCriteria();
+  }, []);
 
   // =========================
   // MODAL
@@ -78,15 +76,15 @@ const Criteria = () => {
       if (editingCriteria) {
         const updatedCriteria = await criteriaService.update(
           editingCriteria.majorcriteriaid,
-          criteriaData,
+          criteriaData
         );
 
         setCriteria((prev) =>
           prev.map((item) =>
             item.majorcriteriaid === editingCriteria.majorcriteriaid
               ? updatedCriteria
-              : item,
-          ),
+              : item
+          )
         );
 
         Swal.fire({
@@ -108,7 +106,7 @@ const Criteria = () => {
 
       closeModal();
     } catch (error) {
-      console.log(error);
+      console.error("Save Criteria Error:", error);
 
       Swal.fire({
         icon: "error",
@@ -119,67 +117,48 @@ const Criteria = () => {
   };
 
   // =========================
-  // ARCHIVE
+  // DELETE CRITERIA — PERMANENT
   // =========================
-  const handleArchiveCriteria = async (majorcriteriaid) => {
+  const handleDelete = async (majorcriteriaid) => {
     const result = await Swal.fire({
-      title: "Archive this criteria?",
-      text: "It will be hidden from new audit points but kept for historical reports.",
+      title: "Delete this criteria permanently?",
+      text: "This cannot be undone. The criteria will be permanently removed.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, archive it!",
+      confirmButtonText: "Yes, delete permanently",
       cancelButtonText: "Cancel",
+      confirmButtonColor: "#d33",
     });
 
     if (!result.isConfirmed) return;
 
     try {
+      setDeletingId(majorcriteriaid);
+
       await criteriaService.remove(majorcriteriaid);
 
       setCriteria((prev) =>
-        prev.filter((item) => item.majorcriteriaid !== majorcriteriaid),
+        prev.filter(
+          (item) =>
+            Number(item.majorcriteriaid) !== Number(majorcriteriaid)
+        )
       );
 
       Swal.fire({
-        title: "Archived!",
-        text: "The criteria has been archived.",
         icon: "success",
+        title: "Deleted!",
+        text: "Criteria permanently deleted.",
       });
     } catch (error) {
-      console.log(error);
+      console.error("Delete Criteria Error:", error);
 
       Swal.fire({
-        title: "Error!",
-        text: "Could not archive this criteria.",
         icon: "error",
-      });
-    }
-  };
-
-  // =========================
-  // RESTORE
-  // =========================
-  const handleRestoreCriteria = async (majorcriteriaid) => {
-    try {
-      await criteriaService.restore(majorcriteriaid);
-
-      setCriteria((prev) =>
-        prev.filter((item) => item.majorcriteriaid !== majorcriteriaid),
-      );
-
-      Swal.fire({
-        title: "Restored!",
-        text: "The criteria is active again.",
-        icon: "success",
-      });
-    } catch (error) {
-      console.log(error);
-
-      Swal.fire({
         title: "Error!",
-        text: "Could not restore this criteria.",
-        icon: "error",
+        text: "Could not delete the criteria.",
       });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -204,25 +183,13 @@ const Criteria = () => {
         eyebrow="Audit setup"
         title="Criteria"
         subtitle="Define the major criteria used to build audit points."
-        actions={
-          <button
-            type="button"
-            className="ag-btn ag-btn-ghost ag-btn-sm"
-            onClick={() => setShowArchived((v) => !v)}
-          >
-            <FiArchive />
-
-            {showArchived ? "Show active only" : "Show archived"}
-          </button>
-        }
       />
 
       <div className="ag-card">
         <div className="ag-card-title-row">
           <div className="ag-card-title">
             <FiCheckSquare />
-
-            {showArchived ? "All criteria (incl. archived)" : "Active criteria"}
+            All criteria
           </div>
 
           <button
@@ -240,83 +207,63 @@ const Criteria = () => {
             <thead>
               <tr>
                 <th>Sl. No.</th>
-
                 <th>Criteria</th>
-
-                <th>Status</th>
-
                 <th>Edit</th>
-
-                <th>Archive / Restore</th>
+                <th>Delete</th>
               </tr>
             </thead>
 
             <tbody>
-              {criteria.length === 0 && (
+              {criteria.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="ag-empty-state">
-                    {showArchived
-                      ? "No criteria found."
-                      : "No active criteria yet."}
+                  <td colSpan={4} className="ag-empty-state">
+                    No criteria yet.
                   </td>
                 </tr>
-              )}
+              ) : (
+                criteria.map((item, index) => (
+                  <tr key={item.majorcriteriaid}>
+                    <td data-label="Sl. No.">
+                      {index + 1}
+                    </td>
 
-              {criteria.map((item, index) => (
-                <tr key={item.majorcriteriaid}>
-                  <td data-label="Sl. No.">{index + 1}</td>
+                    <td data-label="Criteria">
+                      {item.majorcriterianame}
+                    </td>
 
-                  <td data-label="Criteria">{item.majorcriterianame}</td>
-
-                  <td data-label="Status">
-                    <span
-                      className={`ag-badge ${
-                        item.isactive ? "ag-badge-success" : "ag-badge-muted"
-                      }`}
-                    >
-                      {item.isactive ? "Active" : "Archived"}
-                    </span>
-                  </td>
-
-                  <td data-label="Edit">
-                    <div className="ag-row-actions">
-                      <button
-                        className="ag-icon-btn edit"
-                        title="Edit"
-                        onClick={() => openEditModal(item)}
-                      >
-                        <FiEdit2 />
-                      </button>
-                    </div>
-                  </td>
-
-                  <td data-label="Archive / Restore">
-                    <div className="ag-row-actions">
-                      {item.isactive ? (
+                    <td data-label="Edit">
+                      <div className="ag-row-actions">
                         <button
+                          type="button"
+                          className="ag-icon-btn edit"
+                          title="Edit"
+                          onClick={() => openEditModal(item)}
+                        >
+                          <FiEdit2 />
+                        </button>
+                      </div>
+                    </td>
+
+                    <td data-label="Delete">
+                      <div className="ag-row-actions">
+                        <button
+                          type="button"
                           className="ag-icon-btn delete"
-                          title="Archive"
+                          title="Delete"
                           onClick={() =>
-                            handleArchiveCriteria(item.majorcriteriaid)
+                            handleDelete(item.majorcriteriaid)
+                          }
+                          disabled={
+                            deletingId === item.majorcriteriaid
                           }
                         >
                           <FiTrash2 />
                         </button>
-                      ) : (
-                        <button
-                          className="ag-icon-btn enable"
-                          title="Restore"
-                          onClick={() =>
-                            handleRestoreCriteria(item.majorcriteriaid)
-                          }
-                        >
-                          <FiRotateCcw />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -326,7 +273,11 @@ const Criteria = () => {
         isOpen={isModalOpen}
         onClose={closeModal}
         icon={<FiCheckSquare />}
-        title={editingCriteria ? "Edit criteria" : "Add new criteria"}
+        title={
+          editingCriteria
+            ? "Edit criteria"
+            : "Add new criteria"
+        }
       >
         <CriteriaForm
           handleAddCriteria={handleAddCriteria}

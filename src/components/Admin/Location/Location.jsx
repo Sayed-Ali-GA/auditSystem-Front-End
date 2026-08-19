@@ -5,8 +5,6 @@ import {
   FiEdit2,
   FiTrash2,
   FiPlus,
-  FiRotateCcw,
-  FiArchive,
 } from "react-icons/fi";
 
 import locationService from "../../../services/locationServices";
@@ -20,37 +18,37 @@ import "../Shared/theme.css";
 
 const Location = () => {
   const [locations, setLocations] = useState([]);
-
   const [loading, setLoading] = useState(true);
-
   const [editingLocation, setEditingLocation] = useState(null);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const [showArchived, setShowArchived] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   // =========================
   // LOAD LOCATIONS
   // =========================
-  const loadLocations = async (includeInactive) => {
+  const loadLocations = async () => {
     try {
       setLoading(true);
 
-      const data = await locationService.index(includeInactive);
+      const data = await locationService.index();
 
-      setLocations(data);
+      setLocations(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.log(error);
+      console.error("Load Locations Error:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Error!",
+        text: "Could not load locations.",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadLocations(showArchived);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showArchived]);
+    loadLocations();
+  }, []);
 
   // =========================
   // MODAL
@@ -78,15 +76,15 @@ const Location = () => {
       if (editingLocation) {
         const updatedLocation = await locationService.update(
           editingLocation.locationid,
-          locationData,
+          locationData
         );
 
         setLocations((prev) =>
           prev.map((item) =>
             item.locationid === editingLocation.locationid
               ? updatedLocation
-              : item,
-          ),
+              : item
+          )
         );
 
         Swal.fire({
@@ -95,7 +93,8 @@ const Location = () => {
           text: "Location updated successfully.",
         });
       } else {
-        const newLocation = await locationService.create(locationData);
+        const newLocation =
+          await locationService.create(locationData);
 
         setLocations((prev) => [...prev, newLocation]);
 
@@ -108,7 +107,7 @@ const Location = () => {
 
       closeModal();
     } catch (error) {
-      console.log(error);
+      console.error("Save Location Error:", error);
 
       Swal.fire({
         icon: "error",
@@ -119,67 +118,48 @@ const Location = () => {
   };
 
   // =========================
-  // ARCHIVE LOCATION
+  // DELETE LOCATION — PERMANENT
   // =========================
-  const handleArchiveLocation = async (locationid) => {
+  const handleDelete = async (locationid) => {
     const result = await Swal.fire({
-      title: "Archive this location?",
-      text: "It will be hidden from new stores but kept for historical records.",
+      title: "Delete this location permanently?",
+      text: "This cannot be undone. The location will be permanently removed.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, archive it!",
+      confirmButtonText: "Yes, delete permanently",
       cancelButtonText: "Cancel",
+      confirmButtonColor: "#d33",
     });
 
     if (!result.isConfirmed) return;
 
     try {
+      setDeletingId(locationid);
+
       await locationService.remove(locationid);
 
       setLocations((prev) =>
-        prev.filter((item) => item.locationid !== locationid),
+        prev.filter(
+          (item) =>
+            Number(item.locationid) !== Number(locationid)
+        )
       );
 
       Swal.fire({
-        title: "Archived!",
-        text: "The location has been archived.",
         icon: "success",
+        title: "Deleted!",
+        text: "Location permanently deleted.",
       });
     } catch (error) {
-      console.log(error);
+      console.error("Delete Location Error:", error);
 
       Swal.fire({
-        title: "Error!",
-        text: "Could not archive this location.",
         icon: "error",
-      });
-    }
-  };
-
-  // =========================
-  // RESTORE LOCATION
-  // =========================
-  const handleRestoreLocation = async (locationid) => {
-    try {
-      await locationService.restore(locationid);
-
-      setLocations((prev) =>
-        prev.filter((item) => item.locationid !== locationid),
-      );
-
-      Swal.fire({
-        title: "Restored!",
-        text: "The location is active again.",
-        icon: "success",
-      });
-    } catch (error) {
-      console.log(error);
-
-      Swal.fire({
         title: "Error!",
-        text: "Could not restore this location.",
-        icon: "error",
+        text: "Could not delete the location.",
       });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -204,27 +184,13 @@ const Location = () => {
         eyebrow="Network"
         title="Locations"
         subtitle="Manage the cities and areas used across stores."
-        actions={
-          <button
-            type="button"
-            className="ag-btn ag-btn-ghost ag-btn-sm"
-            onClick={() => setShowArchived((v) => !v)}
-          >
-            <FiArchive />
-
-            {showArchived ? "Show active only" : "Show archived"}
-          </button>
-        }
       />
 
       <div className="ag-card">
         <div className="ag-card-title-row">
           <div className="ag-card-title">
             <FiMapPin />
-
-            {showArchived
-              ? "All locations (incl. archived)"
-              : "Active locations"}
+            All locations
           </div>
 
           <button
@@ -242,85 +208,65 @@ const Location = () => {
             <thead>
               <tr>
                 <th>Sl. No.</th>
-
                 <th>Location</th>
-
-                <th>Status</th>
-
                 <th>Edit</th>
-
-                <th>Archive / Restore</th>
+                <th>Delete</th>
               </tr>
             </thead>
 
             <tbody>
-              {locations.length === 0 && (
+              {locations.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="ag-empty-state">
-                    {showArchived
-                      ? "No locations found."
-                      : "No active locations yet."}
+                  <td colSpan={4} className="ag-empty-state">
+                    No locations yet.
                   </td>
                 </tr>
-              )}
+              ) : (
+                locations.map((location, index) => (
+                  <tr key={location.locationid}>
+                    <td data-label="Sl. No.">
+                      {index + 1}
+                    </td>
 
-              {locations.map((location, index) => (
-                <tr key={location.locationid}>
-                  <td data-label="Sl. No.">{index + 1}</td>
+                    <td data-label="Location">
+                      {location.locationname}
+                    </td>
 
-                  <td data-label="Location">{location.locationname}</td>
-
-                  <td data-label="Status">
-                    <span
-                      className={`ag-badge ${
-                        location.isactive
-                          ? "ag-badge-success"
-                          : "ag-badge-muted"
-                      }`}
-                    >
-                      {location.isactive ? "Active" : "Archived"}
-                    </span>
-                  </td>
-
-                  <td data-label="Edit">
-                    <div className="ag-row-actions">
-                      <button
-                        className="ag-icon-btn edit"
-                        title="Edit"
-                        onClick={() => openEditModal(location)}
-                      >
-                        <FiEdit2 />
-                      </button>
-                    </div>
-                  </td>
-
-                  <td data-label="Archive / Restore">
-                    <div className="ag-row-actions">
-                      {location.isactive ? (
+                    <td data-label="Edit">
+                      <div className="ag-row-actions">
                         <button
-                          className="ag-icon-btn delete"
-                          title="Archive"
+                          type="button"
+                          className="ag-icon-btn edit"
+                          title="Edit"
                           onClick={() =>
-                            handleArchiveLocation(location.locationid)
+                            openEditModal(location)
+                          }
+                        >
+                          <FiEdit2 />
+                        </button>
+                      </div>
+                    </td>
+
+                    <td data-label="Delete">
+                      <div className="ag-row-actions">
+                        <button
+                          type="button"
+                          className="ag-icon-btn delete"
+                          title="Delete"
+                          onClick={() =>
+                            handleDelete(location.locationid)
+                          }
+                          disabled={
+                            deletingId === location.locationid
                           }
                         >
                           <FiTrash2 />
                         </button>
-                      ) : (
-                        <button
-                          className="ag-icon-btn enable"
-                          title="Restore"
-                          onClick={() =>
-                            handleRestoreLocation(location.locationid)
-                          }
-                        >
-                          <FiRotateCcw />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -330,7 +276,11 @@ const Location = () => {
         isOpen={isModalOpen}
         onClose={closeModal}
         icon={<FiMapPin />}
-        title={editingLocation ? "Edit location" : "Add new location"}
+        title={
+          editingLocation
+            ? "Edit location"
+            : "Add new location"
+        }
       >
         <LocationForm
           handleAddLocation={handleAddLocation}
