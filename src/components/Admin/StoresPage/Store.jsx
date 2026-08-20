@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Swal from "sweetalert2";
 import { Link } from "react-router-dom";
 import {
@@ -8,6 +8,8 @@ import {
   FiPlus,
   FiClipboard,
   FiKey,
+  FiSearch,
+  FiCheckCircle,
 } from "react-icons/fi";
 
 import brandService from "../../../services/BrandServices";
@@ -15,15 +17,16 @@ import locationServices from "../../../services/locationServices";
 import storeServices from "../../../services/StoreServices";
 import OpsManagerServices from "../../../services/OpsManagerServices";
 import storeManagerServices from "../../../services/StoreManagerServices";
-import userService from "../../../services/UserServices";
 
 import StoreForm from "./StoreForm";
+import StoreLoginModal from "./StoreLoginModal";
 
 import PageHeader from "../Shared/PageHeader";
 import LoadingState from "../Shared/LoadingState";
 import Modal from "../Shared/Modal";
 
 import "../Shared/theme.css";
+import "./storeExtras.css";
 
 const Stores = () => {
   const [stores, setStores] = useState([]);
@@ -33,8 +36,14 @@ const Stores = () => {
   const [storeManagers, setStoreManagers] = useState([]);
 
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [editingStore, setEditingStore] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+
+  const [loginStore, setLoginStore] = useState(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
   const [deletingId, setDeletingId] = useState(null);
 
   // =====================================================
@@ -45,8 +54,6 @@ const Stores = () => {
       setLoading(true);
 
       const data = await storeServices.index();
-
-      // console.log("Stores:", data);
 
       setStores(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -63,100 +70,93 @@ const Stores = () => {
   }, []);
 
   // =====================================================
-  // LOAD BRANDS
+  // LOAD LOOKUP DATA (brands, locations, ops & store managers)
   // =====================================================
   useEffect(() => {
-    const getBrands = async () => {
-      try {
-        const data = await brandService.index();
+    const loadLookups = async () => {
+      const [brandData, locationData, opsData, storeManagerData] =
+        await Promise.allSettled([
+          brandService.index(),
+          locationServices.index(),
+          OpsManagerServices.index(),
+          storeManagerServices.index(),
+        ]);
 
-        setBrands(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.log("Failed to load brands:", error);
+      if (brandData.status === "fulfilled") {
+        setBrands(Array.isArray(brandData.value) ? brandData.value : []);
+      } else {
+        console.log("Failed to load brands:", brandData.reason);
+      }
+
+      if (locationData.status === "fulfilled") {
+        setLocations(
+          Array.isArray(locationData.value) ? locationData.value : []
+        );
+      } else {
+        console.log("Failed to load locations:", locationData.reason);
+      }
+
+      if (opsData.status === "fulfilled") {
+        setOpsManagers(Array.isArray(opsData.value) ? opsData.value : []);
+      } else {
+        console.log("Failed to load Ops Managers:", opsData.reason);
+      }
+
+      if (storeManagerData.status === "fulfilled") {
+        setStoreManagers(
+          Array.isArray(storeManagerData.value) ? storeManagerData.value : []
+        );
+      } else {
+        console.log(
+          "Failed to load Store Managers:",
+          storeManagerData.reason
+        );
       }
     };
 
-    getBrands();
+    loadLookups();
   }, []);
 
   // =====================================================
-  // LOAD LOCATIONS
+  // SEARCH / FILTER
   // =====================================================
-  useEffect(() => {
-    const getLocations = async () => {
-      try {
-        const data = await locationServices.index();
+  const filteredStores = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
 
-        setLocations(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.log("Failed to load locations:", error);
-      }
-    };
+    if (!term) return stores;
 
-    getLocations();
-  }, []);
-
-  // =====================================================
-  // LOAD OPS MANAGERS
-  // =====================================================
-  useEffect(() => {
-    const getOpsManagers = async () => {
-      try {
-        const data = await OpsManagerServices.index();
-
-        setOpsManagers(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.log("Failed to load Ops Managers:", error);
-      }
-    };
-
-    getOpsManagers();
-  }, []);
+    return stores.filter((store) =>
+      [
+        store.storecode,
+        store.email,
+        store.brandname,
+        store.locationname,
+        store.opsmanagername,
+        store.storemanagername,
+      ]
+        .filter(Boolean)
+        .some((field) => field.toLowerCase().includes(term))
+    );
+  }, [stores, searchTerm]);
 
   // =====================================================
-  // LOAD STORE MANAGERS
-  // =====================================================
-  useEffect(() => {
-    const getStoreManagers = async () => {
-      try {
-        const data = await storeManagerServices.index();
-
-        setStoreManagers(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.log("Failed to load Store Managers:", error);
-      }
-    };
-
-    getStoreManagers();
-  }, []);
-
-  // =====================================================
-  // OPEN ADD MODAL
+  // FORM MODAL (Add / Edit)
   // =====================================================
   const openAddModal = () => {
     setEditingStore(null);
-    setIsModalOpen(true);
+    setIsFormModalOpen(true);
   };
 
-  // =====================================================
-  // OPEN EDIT MODAL
-  // =====================================================
   const openEditModal = (store) => {
     setEditingStore(store);
-    setIsModalOpen(true);
+    setIsFormModalOpen(true);
   };
 
-  // =====================================================
-  // CLOSE MODAL
-  // =====================================================
-  const closeModal = () => {
-    setIsModalOpen(false);
+  const closeFormModal = () => {
+    setIsFormModalOpen(false);
     setEditingStore(null);
   };
 
-  // =====================================================
-  // ADD / UPDATE STORE
-  // =====================================================
   const handleAddStore = async (storeData) => {
     try {
       if (editingStore) {
@@ -167,8 +167,7 @@ const Stores = () => {
 
         setStores((prev) =>
           prev.map((item) =>
-            Number(item.storeserial) ===
-            Number(editingStore.storeserial)
+            Number(item.storeserial) === Number(editingStore.storeserial)
               ? updatedStore
               : item
           )
@@ -191,7 +190,7 @@ const Stores = () => {
         });
       }
 
-      closeModal();
+      closeFormModal();
     } catch (error) {
       console.log("Failed to save store:", error);
 
@@ -208,12 +207,11 @@ const Stores = () => {
   // =====================================================
   const handleDeleteStore = async (storeserial) => {
     const store = stores.find(
-      (item) =>
-        Number(item.storeserial) === Number(storeserial)
+      (item) => Number(item.storeserial) === Number(storeserial)
     );
 
     const result = await Swal.fire({
-      title: "Delete this Store permanently?",
+      title: "Delete this store permanently?",
       html: `
         <p style="margin:0;">
           Are you sure you want to permanently delete
@@ -239,25 +237,20 @@ const Stores = () => {
       await storeServices.remove(storeserial);
 
       setStores((prev) =>
-        prev.filter(
-          (item) =>
-            Number(item.storeserial) !== Number(storeserial)
-        )
+        prev.filter((item) => Number(item.storeserial) !== Number(storeserial))
       );
 
       Swal.fire({
         title: "Deleted!",
-        text: "The Store has been permanently deleted.",
+        text: "The store has been permanently deleted.",
         icon: "success",
       });
     } catch (error) {
-      console.log("Failed to delete Store:", error);
+      console.log("Failed to delete store:", error);
 
       Swal.fire({
         title: "Error!",
-        text:
-          error.message ||
-          "Could not delete this Store.",
+        text: error.message || "Could not delete this store.",
         icon: "error",
       });
     } finally {
@@ -266,177 +259,16 @@ const Stores = () => {
   };
 
   // =====================================================
-  // SET / UPDATE STORE LOGIN PASSWORD
+  // STORE LOGIN MODAL
   // =====================================================
-  const handleSetStoreLogin = async (store) => {
-    const storeCode = store?.storecode || "this store";
+  const openLoginModal = (store) => {
+    setLoginStore(store);
+    setIsLoginModalOpen(true);
+  };
 
-    const result = await Swal.fire({
-      title: `Store Login — ${storeCode}`,
-      width: 520,
-      html: `
-        <div style="text-align:left;">
-          <div style="
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            gap:12px;
-            padding:12px 14px;
-            margin-bottom:16px;
-            border:1px solid #e5e7eb;
-            border-radius:10px;
-            background:#f9fafb;
-          ">
-            <div>
-              <div style="font-size:12px;color:#6b7280;margin-bottom:3px;">
-                Store
-              </div>
-              <strong style="font-size:15px;">
-                ${storeCode}
-              </strong>
-            </div>
-
-            <span style="
-              display:inline-flex;
-              align-items:center;
-              gap:6px;
-              padding:6px 10px;
-              border-radius:999px;
-              background:#eef2ff;
-              color:#4338ca;
-              font-size:12px;
-              font-weight:600;
-            ">
-              🔐 Store account
-            </span>
-          </div>
-
-          <p style="
-            font-size:13px;
-            color:#6b7280;
-            line-height:1.6;
-            margin:0 0 16px;
-          ">
-            Set a new password for the store login.
-            The current password is never displayed and cannot be retrieved.
-            Saving this password will create the store login if it does not
-            exist, or update it if it already exists.
-          </p>
-
-          <label style="
-            display:block;
-            font-size:13px;
-            font-weight:600;
-            color:#374151;
-            margin-bottom:7px;
-          ">
-            New password
-          </label>
-
-          <input
-            id="store-login-password"
-            type="password"
-            class="swal2-input"
-            placeholder="Enter new password"
-            style="width:100%;margin:0 0 14px;box-sizing:border-box;"
-          />
-
-          <label style="
-            display:block;
-            font-size:13px;
-            font-weight:600;
-            color:#374151;
-            margin-bottom:7px;
-          ">
-            Confirm password
-          </label>
-
-          <input
-            id="store-login-confirm-password"
-            type="password"
-            class="swal2-input"
-            placeholder="Confirm new password"
-            style="width:100%;margin:0;box-sizing:border-box;"
-          />
-
-          <div style="
-            margin-top:12px;
-            font-size:12px;
-            color:#6b7280;
-          ">
-            Minimum 4 characters.
-          </div>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: "Update password",
-      cancelButtonText: "Cancel",
-      reverseButtons: true,
-      focusConfirm: false,
-
-      preConfirm: () => {
-        const password =
-          document.getElementById("store-login-password")?.value || "";
-
-        const confirmPassword =
-          document.getElementById(
-            "store-login-confirm-password"
-          )?.value || "";
-
-        if (!password) {
-          Swal.showValidationMessage("Please enter a new password.");
-          return false;
-        }
-
-        if (password.length < 4) {
-          Swal.showValidationMessage(
-            "Password must be at least 4 characters."
-          );
-          return false;
-        }
-
-        if (password !== confirmPassword) {
-          Swal.showValidationMessage(
-            "Passwords do not match."
-          );
-          return false;
-        }
-
-        return password;
-      },
-    });
-
-    if (!result.isConfirmed || !result.value) return;
-
-    try {
-      await userService.setStoreLogin(
-        store.storeserial,
-        result.value
-      );
-
-      Swal.fire({
-        icon: "success",
-        title: "Login updated!",
-        html: `
-          <p style="margin:0;line-height:1.6;">
-            The store login password for
-            <strong>${storeCode}</strong>
-            has been updated successfully.
-          </p>
-        `,
-        confirmButtonText: "Done",
-      });
-    } catch (error) {
-      console.error("Failed to set/update store login:", error);
-
-      Swal.fire({
-        icon: "error",
-        title: "Update failed",
-        text:
-          error?.message ||
-          "Could not set or update the store login password.",
-      });
-    }
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+    setLoginStore(null);
   };
 
   // =====================================================
@@ -473,21 +305,31 @@ const Stores = () => {
       />
 
       <div className="ag-card">
-        {/* =====================================================
-            CARD HEADER
-        ===================================================== */}
+        {/* ---------- CARD HEADER ---------- */}
         <div className="ag-card-title-row">
           <div className="ag-card-title">
             <FiShoppingBag />
             Stores
           </div>
-
-
         </div>
 
-        {/* =====================================================
-            TABLE
-        ===================================================== */}
+        {/* ---------- SEARCH TOOLBAR ---------- */}
+        <div className="sx-toolbar">
+          <div className="sx-search">
+            <FiSearch />
+            <input
+              type="text"
+              placeholder="Search by store, email, brand, location or manager..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <span className="sx-result-count">
+            {filteredStores.length} of {stores.length} stores
+          </span>
+        </div>
+
+        {/* ---------- TABLE ---------- */}
         <div className="ag-table-wrap">
           <table className="ag-table">
             <thead>
@@ -507,70 +349,62 @@ const Stores = () => {
             </thead>
 
             <tbody>
-              {stores.length === 0 && (
+              {filteredStores.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={11}
-                    className="ag-empty-state"
-                  >
-                    No stores yet.
+                  <td colSpan={11} className="ag-empty-state">
+                    {stores.length === 0
+                      ? "No stores yet."
+                      : "No stores match your search."}
                   </td>
                 </tr>
               )}
 
-              {stores.map((store, index) => (
+              {filteredStores.map((store, index) => (
                 <tr key={store.storeserial}>
-                  {/* Sl. No. */}
-                  <td data-label="Sl. No.">
-                    {index + 1}
-                  </td>
+                  <td data-label="Sl. No.">{index + 1}</td>
 
-                  {/* Store Code */}
                   <td data-label="Store code">
-                    {store.storecode}
+                    <strong>{store.storecode}</strong>
                   </td>
 
-                  {/* Email */}
-                  <td data-label="Email">
-                    {store.email || "-"}
-                  </td>
+                  <td data-label="Email">{store.email || "-"}</td>
 
-                  {/* Brand */}
-                  <td data-label="Brand">
-                    {store.brandname}
-                  </td>
+                  <td data-label="Brand">{store.brandname || "-"}</td>
 
-                  {/* Location */}
-                  <td data-label="Location">
-                    {store.locationname}
-                  </td>
+                  <td data-label="Location">{store.locationname || "-"}</td>
 
-                  {/* Ops Manager */}
                   <td data-label="Ops manager">
-                    {store.opsmanagername}
+                    {store.opsmanagername || "-"}
                   </td>
 
-                  {/* Store Manager */}
                   <td data-label="Store manager">
-                    {store.storemanagername}
+                    {store.storemanagername || "-"}
                   </td>
 
-                  {/* Store Login */}
                   <td data-label="Store login">
                     <div className="ag-row-actions">
                       <button
                         type="button"
                         className="ag-btn ag-btn-ghost ag-btn-sm"
                         title="Set or update store login password"
-                        onClick={() => handleSetStoreLogin(store)}
+                        onClick={() => openLoginModal(store)}
                       >
                         <FiKey />
-                        Set / Update Password
+                        {store.haslogin ? "Update password" : "Set password"}
                       </button>
+                      {store.haslogin ? (
+                        <span className="sx-badge sx-badge-success">
+                          <FiCheckCircle size={12} />
+                          Active
+                        </span>
+                      ) : (
+                        <span className="sx-badge sx-badge-muted">
+                          Not set
+                        </span>
+                      )}
                     </div>
                   </td>
 
-                  {/* Audits */}
                   <td data-label="Audits">
                     <div className="ag-row-actions">
                       <Link
@@ -583,38 +417,27 @@ const Stores = () => {
                     </div>
                   </td>
 
-                  {/* Edit */}
                   <td data-label="Edit">
                     <div className="ag-row-actions">
                       <button
                         type="button"
                         className="ag-icon-btn edit"
                         title="Edit"
-                        onClick={() =>
-                          openEditModal(store)
-                        }
+                        onClick={() => openEditModal(store)}
                       >
                         <FiEdit2 />
                       </button>
                     </div>
                   </td>
 
-                  {/* Delete */}
                   <td data-label="Delete">
                     <div className="ag-row-actions">
                       <button
                         type="button"
                         className="ag-icon-btn delete"
                         title="Delete permanently"
-                        onClick={() =>
-                          handleDeleteStore(
-                            store.storeserial
-                          )
-                        }
-                        disabled={
-                          deletingId ===
-                          store.storeserial
-                        }
+                        onClick={() => handleDeleteStore(store.storeserial)}
+                        disabled={deletingId === store.storeserial}
                       >
                         <FiTrash2 />
                       </button>
@@ -627,18 +450,12 @@ const Stores = () => {
         </div>
       </div>
 
-      {/* =====================================================
-          STORE MODAL
-      ===================================================== */}
+      {/* ---------- ADD / EDIT STORE MODAL ---------- */}
       <Modal
-        isOpen={isModalOpen}
-        onClose={closeModal}
+        isOpen={isFormModalOpen}
+        onClose={closeFormModal}
         icon={<FiShoppingBag />}
-        title={
-          editingStore
-            ? "Edit store"
-            : "Add new store"
-        }
+        title={editingStore ? "Edit store" : "Add new store"}
       >
         <StoreForm
           brands={brands}
@@ -649,6 +466,13 @@ const Stores = () => {
           editingStore={editingStore}
         />
       </Modal>
+
+      {/* ---------- STORE LOGIN MODAL ---------- */}
+      <StoreLoginModal
+        isOpen={isLoginModalOpen}
+        onClose={closeLoginModal}
+        store={loginStore}
+      />
     </div>
   );
 };
