@@ -1358,34 +1358,36 @@ const AuditView = () => {
                   )}
                 </td>
 
-                <td>
-                  {canEditActionPlan ? (
-                    <textarea
-                      value={ev.ActionPlan || ""}
-                      onChange={(e) =>
-                        handleDraftChange(index, "ActionPlan", e.target.value)
-                      }
-                      placeholder="Corrective action..."
-                    />
-                  ) : (
-                    ev.ActionPlan || "-"
-                  )}
-                </td>
+               <td>
+                      {canEditActionPlan ? (
+                        <textarea
+                          value={ev.ActionPlan || ""}
+                          onChange={(e) =>
+                            handleDraftChange(index, "ActionPlan", e.target.value)
+                          }
+                          placeholder="Corrective action..."
+                          className="action-plan-textarea"
+                        />
+                      ) : (
+                        ev.ActionPlan || "-"
+                      )}
+                    </td>
 
-                <td>
-                  {canEditActionPlan ? (
-                    <input
-                      type="date"
-                      value={toDateInputValue(ev.TargetDate)}
-                      onChange={(e) =>
-                        handleDraftChange(index, "TargetDate", e.target.value)
-                      }
-                    />
-                  ) : (
-                    formatDateDisplay(ev.TargetDate)
-                  )}
-                </td>
-              </tr>
+                    <td>
+                      {canEditActionPlan ? (
+                        <input
+                          type="date"
+                          value={toDateInputValue(ev.TargetDate)}
+                          onChange={(e) =>
+                            handleDraftChange(index, "TargetDate", e.target.value)
+                          }
+                          className="target-date-input"
+                        />
+                      ) : (
+                        formatDateDisplay(ev.TargetDate)
+                      )}
+                    </td>   
+           </tr>
             ))}
           </tbody>
         </table>

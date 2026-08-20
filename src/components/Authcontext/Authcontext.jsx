@@ -5,13 +5,10 @@ const AuthContext = createContext(null);
 
 
 const getUserFromToken = () => {
-
     const token = localStorage.getItem("token");
-
     if (!token) return null;
 
     try {
-
         const decoded = jwtDecode(token);
 
         return {
@@ -20,15 +17,12 @@ const getUserFromToken = () => {
             RoleID: decoded.RoleID,
             LocationID: decoded.LocationID,
             UserName: decoded.UserName,
-            // حساب دخول مربوط بالمتجر نفسه (وليس بشخص) — إن وُجد
             StoreSerial: decoded.StoreSerial,
-            IsStoreAccount: decoded.IsStoreAccount || false,
+            StoreCode: decoded.StoreCode,
+            IsStoreAccount: Boolean(decoded.IsStoreAccount),
         };
-
     } catch (error) {
-
         return null;
-
     }
 };
 
@@ -47,30 +41,25 @@ export const AuthProvider = ({ children }) => {
     );
 
 
+const login = useCallback(({ token: newToken }) => {
+    localStorage.setItem("token", newToken);
 
-    const login = useCallback(({ token: newToken }) => {
+    const decoded = jwtDecode(newToken);
 
-        localStorage.setItem("token", newToken);
+    const userData = {
+        UserID: decoded.UserID,
+        OracleID: decoded.OracleID,
+        RoleID: decoded.RoleID,
+        LocationID: decoded.LocationID,
+        UserName: decoded.UserName,
+        StoreSerial: decoded.StoreSerial,
+        StoreCode: decoded.StoreCode,
+        IsStoreAccount: Boolean(decoded.IsStoreAccount),
+    };
 
-        const decoded = jwtDecode(newToken);
-
-        const userData = {
-            UserID: decoded.UserID,
-            OracleID: decoded.OracleID,
-            RoleID: decoded.RoleID,
-            LocationID: decoded.LocationID,
-            UserName: decoded.UserName,
-            StoreSerial: decoded.StoreSerial,
-            IsStoreAccount: decoded.IsStoreAccount || false,
-        };
-
-
-        setToken(newToken);
-        setUser(userData);
-
-
-    }, []);
-
+    setToken(newToken);
+    setUser(userData);
+}, []);
 
 
     const logout = useCallback(() => {

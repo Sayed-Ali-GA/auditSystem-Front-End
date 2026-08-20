@@ -46,7 +46,7 @@ const Stores = () => {
 
       const data = await storeServices.index();
 
-      console.log("Stores:", data);
+      // console.log("Stores:", data);
 
       setStores(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -269,56 +269,172 @@ const Stores = () => {
   // SET / UPDATE STORE LOGIN PASSWORD
   // =====================================================
   const handleSetStoreLogin = async (store) => {
-    const { value: password } = await Swal.fire({
-      title: `Set login password for ${store.storecode}`,
+    const storeCode = store?.storecode || "this store";
+
+    const result = await Swal.fire({
+      title: `Store Login — ${storeCode}`,
+      width: 520,
       html: `
-        <p style="
-          font-size:13px;
-          color:#6b7280;
-          margin:0 0 10px;
-          text-align:left;
-        ">
-          This creates/updates a login account tied to the
-          <b>store itself</b>
-          (Store Code = ${store.storecode}).
-          It stays the same even if the assigned Store Manager
-          changes later.
-        </p>
+        <div style="text-align:left;">
+          <div style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            padding:12px 14px;
+            margin-bottom:16px;
+            border:1px solid #e5e7eb;
+            border-radius:10px;
+            background:#f9fafb;
+          ">
+            <div>
+              <div style="font-size:12px;color:#6b7280;margin-bottom:3px;">
+                Store
+              </div>
+              <strong style="font-size:15px;">
+                ${storeCode}
+              </strong>
+            </div>
+
+            <span style="
+              display:inline-flex;
+              align-items:center;
+              gap:6px;
+              padding:6px 10px;
+              border-radius:999px;
+              background:#eef2ff;
+              color:#4338ca;
+              font-size:12px;
+              font-weight:600;
+            ">
+              🔐 Store account
+            </span>
+          </div>
+
+          <p style="
+            font-size:13px;
+            color:#6b7280;
+            line-height:1.6;
+            margin:0 0 16px;
+          ">
+            Set a new password for the store login.
+            The current password is never displayed and cannot be retrieved.
+            Saving this password will create the store login if it does not
+            exist, or update it if it already exists.
+          </p>
+
+          <label style="
+            display:block;
+            font-size:13px;
+            font-weight:600;
+            color:#374151;
+            margin-bottom:7px;
+          ">
+            New password
+          </label>
+
+          <input
+            id="store-login-password"
+            type="password"
+            class="swal2-input"
+            placeholder="Enter new password"
+            style="width:100%;margin:0 0 14px;box-sizing:border-box;"
+          />
+
+          <label style="
+            display:block;
+            font-size:13px;
+            font-weight:600;
+            color:#374151;
+            margin-bottom:7px;
+          ">
+            Confirm password
+          </label>
+
+          <input
+            id="store-login-confirm-password"
+            type="password"
+            class="swal2-input"
+            placeholder="Confirm new password"
+            style="width:100%;margin:0;box-sizing:border-box;"
+          />
+
+          <div style="
+            margin-top:12px;
+            font-size:12px;
+            color:#6b7280;
+          ">
+            Minimum 4 characters.
+          </div>
+        </div>
       `,
-      input: "password",
-      inputPlaceholder: "New login password (min 4 characters)",
       showCancelButton: true,
-      confirmButtonText: "Save password",
+      confirmButtonText: "Update password",
       cancelButtonText: "Cancel",
-      inputValidator: (value) => {
-        if (!value || value.length < 4) {
-          return "Password must be at least 4 characters.";
+      reverseButtons: true,
+      focusConfirm: false,
+
+      preConfirm: () => {
+        const password =
+          document.getElementById("store-login-password")?.value || "";
+
+        const confirmPassword =
+          document.getElementById(
+            "store-login-confirm-password"
+          )?.value || "";
+
+        if (!password) {
+          Swal.showValidationMessage("Please enter a new password.");
+          return false;
         }
+
+        if (password.length < 4) {
+          Swal.showValidationMessage(
+            "Password must be at least 4 characters."
+          );
+          return false;
+        }
+
+        if (password !== confirmPassword) {
+          Swal.showValidationMessage(
+            "Passwords do not match."
+          );
+          return false;
+        }
+
+        return password;
       },
     });
 
-    if (!password) return;
+    if (!result.isConfirmed || !result.value) return;
 
     try {
       await userService.setStoreLogin(
         store.storeserial,
-        password
+        result.value
       );
 
       Swal.fire({
         icon: "success",
-        title: "Saved!",
-        text: `Login password set for store ${store.storecode}. Use Store Login on the sign-in page with this Store Code.`,
+        title: "Login updated!",
+        html: `
+          <p style="margin:0;line-height:1.6;">
+            The store login password for
+            <strong>${storeCode}</strong>
+            has been updated successfully.
+          </p>
+        `,
+        confirmButtonText: "Done",
       });
     } catch (error) {
-      console.log("Failed to set store login:", error);
+      console.error("Failed to set/update store login:", error);
 
       Swal.fire({
         icon: "error",
-        title: "Error!",
+        title: "Update failed",
         text:
-          error.message ||
-          "Could not set the store login password.",
+          error?.message ||
+          "Could not set or update the store login password.",
       });
     }
   };
@@ -445,13 +561,11 @@ const Stores = () => {
                       <button
                         type="button"
                         className="ag-btn ag-btn-ghost ag-btn-sm"
-                        title="Set / update store login password"
-                        onClick={() =>
-                          handleSetStoreLogin(store)
-                        }
+                        title="Set or update store login password"
+                        onClick={() => handleSetStoreLogin(store)}
                       >
                         <FiKey />
-                        Set login
+                        Set / Update Password
                       </button>
                     </div>
                   </td>

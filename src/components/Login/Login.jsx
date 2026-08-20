@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import userService from "../../services/UserServices";
 import { useAuth } from "../../components/Authcontext/Authcontext";
 import "./Login.css";
 
-/* Small inline icons — no external icon font dependency */
+const REMEMBER_KEY = "audit_remember_identifier";
+
+/* icons unchanged... */
 const UserIcon = () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <circle cx="12" cy="8" r="3.4" />
@@ -32,14 +34,26 @@ const Login = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    // "employee" = دخول شخصي بالـ Oracle ID
-    // "store"    = دخول حساب متجر بالـ Store Code (لا يتأثر بتغيير المدير)
     const [loginMode, setLoginMode] = useState("employee");
-
-    const [identifier, setIdentifier] = useState(""); // Oracle ID أو Store Code
+    const [identifier, setIdentifier] = useState("");
     const [Password, setPassword] = useState("");
+    const [rememberMe, setRememberMe] = useState(false);
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Restore a remembered identifier for the last-used mode, if any.
+    useEffect(() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem(REMEMBER_KEY) || "null");
+            if (saved?.mode) {
+                setLoginMode(saved.mode);
+                setIdentifier(saved.identifier || "");
+                setRememberMe(true);
+            }
+        } catch {
+            // ignore malformed storage
+        }
+    }, []);
 
     const switchMode = (mode) => {
         setLoginMode(mode);
@@ -51,7 +65,9 @@ const Login = () => {
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        if (!identifier.trim() || !Password) {
+        const trimmedIdentifier = identifier.trim();
+
+        if (!trimmedIdentifier || !Password) {
             setError(
                 loginMode === "store"
                     ? "Please enter the Store Code and password."
@@ -67,13 +83,22 @@ const Login = () => {
             const data =
                 loginMode === "store"
                     ? await userService.storeLogin({
-                          StoreCode: identifier.trim(),
+                          StoreCode: trimmedIdentifier,
                           Password,
                       })
                     : await userService.login({
-                          OracleID: identifier.trim(),
+                          OracleID: trimmedIdentifier,
                           Password,
                       });
+
+            if (rememberMe) {
+                localStorage.setItem(
+                    REMEMBER_KEY,
+                    JSON.stringify({ mode: loginMode, identifier: trimmedIdentifier })
+                );
+            } else {
+                localStorage.removeItem(REMEMBER_KEY);
+            }
 
             login(data);
             navigate("/");
@@ -86,7 +111,6 @@ const Login = () => {
 
     return (
         <div className="login-page">
-            {/* Top navbar */}
             <header className="navbar">
                 <div className="navbar-brand">
                     <img src="images/logo.png" alt="Apparel Group" className="navbar-logo" />
@@ -97,9 +121,7 @@ const Login = () => {
                 </a>
             </header>
 
-            {/* 50/50 split */}
             <div className="login-split">
-                {/* Left: the company, presented clearly */}
                 <div className="split-left">
                     <div className="left-content">
                         <div className="left-logo-plate">
@@ -111,7 +133,6 @@ const Login = () => {
                     </div>
                 </div>
 
-                {/* Right: the form */}
                 <div className="split-right">
                     <div className="login-form-block">
                         <div className="form-eyebrow">Restricted Access</div>
@@ -122,7 +143,6 @@ const Login = () => {
                                 : "Enter your Oracle ID and password to continue."}
                         </p>
 
-                        {/* Login mode switch */}
                         <div className="login-mode-switch" role="tablist">
                             <button
                                 type="button"
@@ -202,7 +222,12 @@ const Login = () => {
 
                             <div className="form-footer-actions">
                                 <label className="remember-me">
-                                    <input type="checkbox" />
+                                    <input
+                                        type="checkbox"
+                                        checked={rememberMe}
+                                        onChange={(e) => setRememberMe(e.target.checked)}
+                                        disabled={isSubmitting}
+                                    />
                                     <span>Remember me</span>
                                 </label>
                                 <a href="mailto:support@auditsystem.com" className="forgot-password">

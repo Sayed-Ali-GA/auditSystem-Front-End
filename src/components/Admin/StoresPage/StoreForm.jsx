@@ -8,7 +8,18 @@ import {
   FiUser,
   FiMail,
   FiSave,
+  FiKey,
 } from "react-icons/fi";
+
+const emptyStoreData = {
+  StoreCode: "",
+  Email: "",
+  BrandID: null,
+  LocationID: null,
+  OpsManagerID: null,
+  StoreManagerID: null,
+  LoginPassword: "",
+};
 
 const StoreForm = ({
   opsManagers,
@@ -18,67 +29,90 @@ const StoreForm = ({
   storeManagers,
   editingStore,
 }) => {
+  const [storeData, setStoreData] = useState(emptyStoreData);
+
   useEffect(() => {
     if (editingStore) {
       setStoreData({
-        StoreCode: editingStore.storecode,
-        Email: editingStore.email || "",
-        BrandID: editingStore.brandid,
-        LocationID: editingStore.locationid,
-        OpsManagerID: editingStore.opsmanagerid,
-        StoreManagerID: editingStore.storemanagerid,
+        StoreCode: editingStore.storecode ?? "",
+        Email: editingStore.email ?? "",
+        BrandID: editingStore.brandid ?? null,
+        LocationID: editingStore.locationid ?? null,
+        OpsManagerID: editingStore.opsmanagerid ?? null,
+        StoreManagerID: editingStore.storemanagerid ?? null,
+
+        // مهم:
+        // لا نسترجع الباسورد القديم من الـ backend
+        LoginPassword: "",
       });
     } else {
-      setStoreData({
-        StoreCode: "",
-        Email: "",
-        BrandID: null,
-        LocationID: null,
-        OpsManagerID: null,
-        StoreManagerID: null,
-      });
+      setStoreData({ ...emptyStoreData });
     }
   }, [editingStore]);
 
-  const [storeData, setStoreData] = useState({
-    StoreCode: "",
-    Email: "",
-    BrandID: null,
-    LocationID: null,
-    OpsManagerID: null,
-    StoreManagerID: null,
-  });
-
   const handleChange = (e) => {
-    setStoreData({
-      ...storeData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setStoreData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    await handleAddStore(storeData);
+    // Basic validation
+    if (!storeData.StoreCode.trim()) {
+      return;
+    }
 
+    if (!storeData.BrandID) {
+      return;
+    }
+
+    if (!storeData.LocationID) {
+      return;
+    }
+
+    if (!storeData.OpsManagerID) {
+      return;
+    }
+
+    if (!storeData.StoreManagerID) {
+      return;
+    }
+
+    const payload = {
+      StoreCode: storeData.StoreCode.trim(),
+      Email: storeData.Email.trim(),
+      BrandID: storeData.BrandID,
+      LocationID: storeData.LocationID,
+      OpsManagerID: storeData.OpsManagerID,
+      StoreManagerID: storeData.StoreManagerID,
+    };
+
+    // فقط إذا المستخدم كتب باسورد جديد نرسله
+    if (storeData.LoginPassword.trim()) {
+      payload.LoginPassword = storeData.LoginPassword;
+    }
+
+    await handleAddStore(payload);
+
+    // بعد الإضافة فقط نفرغ الفورم
     if (!editingStore) {
-      setStoreData({
-        StoreCode: "",
-        Email: "",
-        BrandID: null,
-        LocationID: null,
-        OpsManagerID: null,
-        StoreManagerID: null,
-      });
+      setStoreData({ ...emptyStoreData });
     }
   };
 
   const filteredStoreManagers = storeManagers.filter((storeManager) => {
     const matchBrand =
-      !storeData.BrandID || storeManager.brandid === storeData.BrandID;
+      !storeData.BrandID ||
+      storeManager.brandid === storeData.BrandID;
 
     const matchLocation =
-      !storeData.LocationID || storeManager.locationid === storeData.LocationID;
+      !storeData.LocationID ||
+      storeManager.locationid === storeData.LocationID;
 
     return matchBrand && matchLocation;
   });
@@ -106,10 +140,13 @@ const StoreForm = ({
   return (
     <form onSubmit={handleSubmit}>
       <div className="ag-form-grid">
+
+        {/* Store Code */}
         <div className="ag-field">
           <label>
             <FiHash /> Store code
           </label>
+
           <input
             type="text"
             name="StoreCode"
@@ -120,10 +157,12 @@ const StoreForm = ({
           />
         </div>
 
+        {/* Store Email */}
         <div className="ag-field">
           <label>
             <FiMail /> Store email
           </label>
+
           <input
             type="email"
             name="Email"
@@ -133,112 +172,159 @@ const StoreForm = ({
           />
         </div>
 
+        {/* Brand */}
         <div className="ag-field">
           <label>
             <FiTag /> Brand
           </label>
+
           <Select
             classNamePrefix="ag-rs"
             className="ag-select"
             options={brandOptions}
-            required
             placeholder="Search brand..."
             value={
               brandOptions.find(
-                (option) => option.value === storeData.BrandID,
+                (option) => option.value === storeData.BrandID
               ) || null
             }
             onChange={(selectedOption) =>
-              setStoreData({
-                ...storeData,
-                BrandID: selectedOption ? selectedOption.value : null,
+              setStoreData((prev) => ({
+                ...prev,
+                BrandID: selectedOption
+                  ? selectedOption.value
+                  : null,
                 StoreManagerID: null,
-              })
+              }))
             }
             isSearchable
           />
         </div>
 
+        {/* Location */}
         <div className="ag-field">
           <label>
             <FiMapPin /> Location
           </label>
+
           <Select
             classNamePrefix="ag-rs"
             className="ag-select"
             options={locationOptions}
             placeholder="Search location..."
-            required
             value={
               locationOptions.find(
-                (option) => option.value === storeData.LocationID,
+                (option) => option.value === storeData.LocationID
               ) || null
             }
             onChange={(selectedOption) =>
-              setStoreData({
-                ...storeData,
-                LocationID: selectedOption ? selectedOption.value : null,
-              })
+              setStoreData((prev) => ({
+                ...prev,
+                LocationID: selectedOption
+                  ? selectedOption.value
+                  : null,
+              }))
             }
             isSearchable
           />
         </div>
 
+        {/* Ops Manager */}
         <div className="ag-field">
           <label>
             <FiUserCheck /> Ops manager
           </label>
+
           <Select
             classNamePrefix="ag-rs"
             className="ag-select"
             options={opsManagerOptions}
-            required
             placeholder="Search ops managers..."
             value={
               opsManagerOptions.find(
-                (option) => option.value === storeData.OpsManagerID,
+                (option) =>
+                  option.value === storeData.OpsManagerID
               ) || null
             }
             onChange={(selectedOption) =>
-              setStoreData({
-                ...storeData,
-                OpsManagerID: selectedOption ? selectedOption.value : null,
-              })
+              setStoreData((prev) => ({
+                ...prev,
+                OpsManagerID: selectedOption
+                  ? selectedOption.value
+                  : null,
+              }))
             }
             isSearchable
           />
         </div>
 
+        {/* Store Manager */}
         <div className="ag-field">
           <label>
             <FiUser /> Store manager
           </label>
+
           <Select
             classNamePrefix="ag-rs"
             className="ag-select"
             options={storeManagerOptions}
             placeholder="Search store managers..."
-            required
             value={
               storeManagerOptions.find(
-                (option) => option.value === storeData.StoreManagerID,
+                (option) =>
+                  option.value === storeData.StoreManagerID
               ) || null
             }
             onChange={(selectedOption) =>
-              setStoreData({
-                ...storeData,
-                StoreManagerID: selectedOption ? selectedOption.value : null,
-              })
+              setStoreData((prev) => ({
+                ...prev,
+                StoreManagerID: selectedOption
+                  ? selectedOption.value
+                  : null,
+              }))
             }
             isSearchable
           />
         </div>
       </div>
 
+      {/* Password */}
+      <div
+        className="ag-field"
+        style={{ marginTop: 8 }}
+      >
+        <label>
+          <FiKey />{" "}
+          {editingStore
+            ? "Store login password (leave blank to keep unchanged)"
+            : "Store login password (optional)"}
+        </label>
+
+        <input
+          type="password"
+          name="LoginPassword"
+          placeholder={
+            editingStore
+              ? "Enter new password only if you want to change it"
+              : "Set now, or skip and set later"
+          }
+          onChange={handleChange}
+          value={storeData.LoginPassword}
+          autoComplete="new-password"
+        />
+      </div>
+
+      {/* Actions */}
       <div className="ag-form-actions">
-        <button type="submit" className="ag-btn ag-btn-primary">
+        <button
+          type="submit"
+          className="ag-btn ag-btn-primary"
+        >
           <FiSave />
-          {editingStore ? "Update store" : "Add store"}
+
+          {editingStore
+            ? "Update store"
+            : "Add store"}
         </button>
       </div>
     </form>

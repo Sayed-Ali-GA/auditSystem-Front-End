@@ -14,7 +14,7 @@ const typeIcon = {
 
 const NavBar = () => {
   const { logout, user } = useAuth();
-  console.log("CURRENT USER:", user);
+  // console.log("CURRENT USER:", user);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -188,19 +188,16 @@ const NavBar = () => {
             </div>
           )}
         </div>
-
-       <div className="user-info">
+<div className="user-info">
   <div className="avatar">
     {user?.UserName?.charAt(0).toUpperCase()}
   </div>
 
   <div>
     <strong>{user?.UserName}</strong>
-    <p>{roleNames[user?.RoleID]}</p>
-
-    {user?.RoleID === 3 && user?.StoreName && (
-      <small>{user.StoreName}</small>
-    )}
+    <p>
+      {user?.IsStoreAccount ? "Store Account" : roleNames[user?.RoleID]}
+    </p>
   </div>
 </div>
 
