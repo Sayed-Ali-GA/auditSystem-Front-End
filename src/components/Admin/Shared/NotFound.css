@@ -1,0 +1,38 @@
+.ag-notfound {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 60vh;
+  padding: 40px 20px;
+  gap: 10px;
+}
+
+.ag-notfound-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff8ec;
+  color: #c98a2c;
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.ag-notfound h1 {
+  font-size: 48px;
+  font-weight: 800;
+  color: #1f2328;
+  margin: 0;
+  font-family: var(--font-display, 'Fraunces', serif);
+}
+
+.ag-notfound p {
+  color: #6b7280;
+  font-size: 15px;
+  max-width: 360px;
+  margin: 0 0 12px;
+}

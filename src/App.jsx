@@ -1,9 +1,14 @@
 import { Routes, Route } from "react-router-dom";
 
-import { AuthProvider, useAuth } from "./components/Authcontext/Authcontext";
+import {
+    AuthProvider,
+    useAuth,
+} from "./components/Authcontext/Authcontext";
+
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute/PublicRoute";
 
+// Admin
 import Users from "./components/Admin/Users/Users";
 import Sidebar from "./components/Admin/Sidebar/Sidebar";
 import Brands from "./components/Admin/Brands/Brands";
@@ -14,15 +19,24 @@ import StoreManagers from "./components/Admin/StoreManager/StoreManager";
 import Stores from "./components/Admin/StoresPage/Store";
 import AuditPoint from "./components/Admin/AuditPoints/AuditPoints";
 import HomePage from "./components/Admin/HomePage/HomePage";
-import Login from "./components/Login/Login";
 import Reports from "./components/Admin/Reports/Reports";
-import MyTasks from "./components/Employee/Audit/MyTasks";
 
-import AuditDetails from './components/Employee/Audit/AuditDetails'
+// Login
+import Login from "./components/Login/Login";
+
+// Employee / Audit
+import MyTasks from "./components/Employee/Audit/MyTasks";
+import AuditDetails from "./components/Employee/Audit/AuditDetails";
 import AuditForm from "./components/Employee/Audit/AuditForm";
 import AuditsList from "./components/Employee/Audit/Auditslist";
 import AuditView from "./components/Employee/Audit/Auditview";
+
+// Layout
 import NavBar from "./components/NavBar/NavBar";
+import NotFound from "./components/Admin/Shared/NotFound";
+
+// Roles
+import { ROLES } from "./constants/roles";
 
 import "./App.css";
 
@@ -34,145 +48,292 @@ function AppShell() {
     return (
         <div className="app">
 
-        {isAuthenticated && <Sidebar />}
+            {/* Sidebar */}
+            {isAuthenticated && <Sidebar />}
 
-        <div className="main-layout">
+            <div className="main-layout">
 
-            {isAuthenticated && <NavBar />}
+                {/* Navbar */}
+                {isAuthenticated && <NavBar />}
 
-            <main className="content">
+                <main className="content">
 
-                <Routes>
+                    <Routes>
 
-                    <Route element={<PublicRoute />}>
+                        {/* =====================================================
+                            PUBLIC
+                        ====================================================== */}
 
-                    
+                        <Route element={<PublicRoute />}>
+
+                            <Route
+                                path="/login"
+                                element={<Login />}
+                            />
+
+                        </Route>
+
+
+                        {/* =====================================================
+                            ALL AUTHENTICATED USERS
+                        ====================================================== */}
+
+                        <Route element={<ProtectedRoute />}>
+
+                            {/* Home is available to everyone */}
+                            <Route
+                                path="/"
+                                element={<HomePage />}
+                            />
+
+
+                            {/* =================================================
+                                ADMIN
+                            ================================================== */}
+
+                            <Route
+                                element={
+                                    <ProtectedRoute
+                                        allowedRoles={[ROLES.ADMIN]}
+                                    />
+                                }
+                            >
+
+                                <Route
+                                    path="/users"
+                                    element={<Users />}
+                                />
+
+                                <Route
+                                    path="/brands"
+                                    element={<Brands />}
+                                />
+
+                                <Route
+                                    path="/criteria"
+                                    element={<Criteria />}
+                                />
+
+                                <Route
+                                    path="/location"
+                                    element={<Location />}
+                                />
+
+                                <Route
+                                    path="/opsmanagers"
+                                    element={<OpsManager />}
+                                />
+
+                                <Route
+                                    path="/storemanagers"
+                                    element={<StoreManagers />}
+                                />
+
+                                <Route
+                                    path="/stores"
+                                    element={<Stores />}
+                                />
+
+                            </Route>
+
+
+                            {/* =================================================
+                                AUDIT POINT
+
+                                Sidebar:
+                                Admin
+                                Audit Manager
+
+                                Ops Manager -> NOT visible
+                                Store Manager -> NOT visible
+                                Auditor -> NOT visible
+                            ================================================== */}
+
+                            <Route
+                                element={
+                                    <ProtectedRoute
+                                        allowedRoles={[
+                                            ROLES.ADMIN,
+                                            ROLES.AUDIT_MANAGER,
+                                        ]}
+                                    />
+                                }
+                            >
+
+                                <Route
+                                    path="/audit-points"
+                                    element={<AuditPoint />}
+                                />
+
+                            </Route>
+
+
+                            {/* =================================================
+                                START AUDIT
+
+                                Sidebar:
+                                Auditor only
+                            ================================================== */}
+
+                            <Route
+                                element={
+                                    <ProtectedRoute
+                                        allowedRoles={[
+                                            ROLES.AUDITOR,
+                                        ]}
+                                    />
+                                }
+                            >
+
+                                <Route
+                                    path="/audit"
+                                    element={<AuditForm />}
+                                />
+
+                                <Route
+                                    path="/AuditDetails/:storeId"
+                                    element={<AuditDetails />}
+                                />
+
+                            </Route>
+
+
+                            {/* =================================================
+                                MY TASKS
+
+                                Sidebar:
+                                Admin
+                                Ops Manager
+                                Store Manager
+                                Auditor
+                                Audit Manager
+
+                                Everyone except nobody.
+                            ================================================== */}
+
+                            <Route
+                                element={
+                                    <ProtectedRoute
+                                        allowedRoles={[
+                                            ROLES.ADMIN,
+                                            ROLES.OPS_MANAGER,
+                                            ROLES.STORE_MANAGER,
+                                            ROLES.AUDITOR,
+                                            ROLES.AUDIT_MANAGER,
+                                        ]}
+                                    />
+                                }
+                            >
+
+                                <Route
+                                    path="/tasks"
+                                    element={<MyTasks />}
+                                />
+
+                            </Route>
+
+
+                            {/* =================================================
+                                AUDITS
+
+                                Sidebar:
+                                Admin
+                                Ops Manager
+                                Store Manager
+                                Auditor
+                                Audit Manager
+
+                                Everyone can see Audits according to
+                                the Sidebar.
+                            ================================================== */}
+
+                            <Route
+                                element={
+                                    <ProtectedRoute
+                                        allowedRoles={[
+                                            ROLES.ADMIN,
+                                            ROLES.OPS_MANAGER,
+                                            ROLES.STORE_MANAGER,
+                                            ROLES.AUDITOR,
+                                            ROLES.AUDIT_MANAGER,
+                                        ]}
+                                    />
+                                }
+                            >
+
+                                <Route
+                                    path="/Audits"
+                                    element={<AuditsList />}
+                                />
+
+                                <Route
+                                    path="/Audits/:id"
+                                    element={<AuditView />}
+                                />
+
+                            </Route>
+
+
+                            {/* =================================================
+                                REPORTS
+
+                                Sidebar:
+                                Admin
+                                Ops Manager
+                                Store Manager
+                                Auditor
+                                Audit Manager
+
+                                Everyone can see Reports according to
+                                the current Sidebar.
+                            ================================================== */}
+
+                            <Route
+                                element={
+                                    <ProtectedRoute
+                                        allowedRoles={[
+                                            ROLES.ADMIN,
+                                            ROLES.OPS_MANAGER,
+                                            ROLES.STORE_MANAGER,
+                                            ROLES.AUDITOR,
+                                            ROLES.AUDIT_MANAGER,
+                                        ]}
+                                    />
+                                }
+                            >
+
+                                <Route
+                                    path="/Reports"
+                                    element={<Reports />}
+                                />
+
+                            </Route>
+
+                        </Route>
+
+
+                        {/* =====================================================
+                            404
+                        ====================================================== */}
+
                         <Route
-                            path="/login"
-                            element={<Login />}
-                        />
-                    </Route>
-
-
-
-
-                    <Route element={<ProtectedRoute />}>
-{/* ------------------------------- Admin ---------------------------------- */}
-                        <Route
-                            path="/"
-                            element={<HomePage />}
+                            path="*"
+                            element={<NotFound />}
                         />
 
-            <Route element={<ProtectedRoute allowedRoles={[1]} />}>
+                    </Routes>
 
-                        
-                        <Route 
-                            path="/brands" 
-                            element={<Brands />} 
-                        />
-                        
-                        <Route 
-                            path="/criteria" 
-                            element={<Criteria />} 
-                        />
-                        
-                        <Route 
-                            path="/location" 
-                            element={<Location />} 
-                        />
-                        
-                        <Route 
-                            path="/opsmanagers" 
-                            element={<OpsManager />} 
-                        />
-                        
-                        <Route 
-                            path="/storemanagers" 
-                            element={<StoreManagers />} 
-                        />
-                        
-                        <Route 
-                            path="/stores" 
-                            element={<Stores />} 
-                        />
-                        
-                        <Route 
-                            path="/users" 
-                            element={<Users />} 
-                        />
-                        
-                        
+                </main>
 
-                    </Route>
+            </div>
 
-
-{/* ----------------------------------  Ops Manager   ---------------------------------------------------- */}
-
-            <Route element={<ProtectedRoute allowedRoles={[1,2,5,4]} />}>
-            
-                        <Route
-                                path="/audit-points"
-                                element={<AuditPoint />}
-                        />
-            </Route>
-
-
-{/* ---------------------------------- Auditor ------------------------------------------------------- */}
-
-            <Route element={<ProtectedRoute allowedRoles={[1,2,3,4,5]} />}>
-                    
-                    <Route 
-                        path="/audit" 
-                        element={<AuditForm />} 
-                    />
-
-                    <Route 
-                        path="/AuditDetails/:storeId" 
-                        element={<AuditDetails />} 
-                    />
-            
-            </Route>
-
-            
-          <Route element={<ProtectedRoute allowedRoles={[1,2,3,4,5]} />}>
-
-                    <Route
-                        path="/Audits"
-                        element={<AuditsList />}
-                    />
-
-                    <Route
-                        path="/Audits/:id"
-                        element={<AuditView />}
-                    />
-
-                    <Route
-                        path="/Reports"
-                        element={<Reports />}
-                    />
-
-                     <Route
-                        path="/tasks"
-                        element={<MyTasks />}
-                    />
-
-            </Route>
-
-
-                
-    </Route>
-
-                <Route path="*" element={<h1>404 Not Found</h1>} />
-        </Routes>
-
-            </main>
         </div>
-        </div>
-
     );
 }
 
+
 function App() {
+
     return (
         <AuthProvider>
             <AppShell />

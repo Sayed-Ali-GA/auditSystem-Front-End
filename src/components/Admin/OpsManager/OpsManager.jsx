@@ -10,6 +10,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 import OpsManagerService from "../../../services/OpsManagerServices";
+import locationServices from "../../../services/locationServices";
 import OpsManagerForm from "./OpsManagerForm";
 import userService from "../../../services/UserServices";
 
@@ -22,6 +23,7 @@ import "./OpsManager.css";
 
 const OpsManager = () => {
   const [opsManagers, setOpsManagers] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingOpsManager, setEditingOpsManager] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,6 +60,22 @@ const OpsManager = () => {
   }, []);
 
   // =========================
+  // LOAD LOCATIONS (needed for the optional login-account section)
+  // =========================
+  useEffect(() => {
+    const getLocations = async () => {
+      try {
+        const data = await locationServices.index();
+        setLocations(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Failed to load locations:", error);
+      }
+    };
+
+    getLocations();
+  }, []);
+
+  // =========================
   // LOAD USER ACCOUNTS
   // =========================
   useEffect(() => {
@@ -81,7 +99,7 @@ const OpsManager = () => {
   }, []);
 
   // =========================
-  // ADD TO USERS
+  // ADD TO USERS (kept as a fallback for managers created without a login)
   // =========================
   const handleAddToUsers = (opsManager) => {
     navigate(
@@ -113,49 +131,40 @@ const OpsManager = () => {
   // ADD / UPDATE
   // =========================
   const handleAddOpsManager = async (opsManagerData) => {
-    try {
-      if (editingOpsManager) {
-        const updatedOpsManager = await OpsManagerService.update(
-          editingOpsManager.opsmanagerid,
-          opsManagerData
-        );
+    if (editingOpsManager) {
+      const updatedOpsManager = await OpsManagerService.update(
+        editingOpsManager.opsmanagerid,
+        opsManagerData
+      );
 
-        setOpsManagers((prev) =>
-          prev.map((item) =>
-            item.opsmanagerid === editingOpsManager.opsmanagerid
-              ? updatedOpsManager
-              : item
-          )
-        );
-
-        Swal.fire({
-          icon: "success",
-          title: "Updated!",
-          text: "Ops Manager updated successfully.",
-        });
-      } else {
-        const newOpsManager =
-          await OpsManagerService.create(opsManagerData);
-
-        setOpsManagers((prev) => [...prev, newOpsManager]);
-
-        Swal.fire({
-          icon: "success",
-          title: "Added!",
-          text: "Ops Manager added successfully.",
-        });
-      }
-
-      closeModal();
-    } catch (error) {
-      console.error("Save Ops Manager Error:", error);
+      setOpsManagers((prev) =>
+        prev.map((item) =>
+          item.opsmanagerid === editingOpsManager.opsmanagerid
+            ? updatedOpsManager
+            : item
+        )
+      );
 
       Swal.fire({
-        icon: "error",
-        title: "Error!",
-        text: "Something went wrong.",
+        icon: "success",
+        title: "Updated!",
+        text: "Ops Manager updated successfully.",
+      });
+    } else {
+      const newOpsManager = await OpsManagerService.create(opsManagerData);
+
+      setOpsManagers((prev) => [...prev, newOpsManager]);
+
+      Swal.fire({
+        icon: "success",
+        title: "Added!",
+        text: newOpsManager.loginAccount
+          ? "Ops Manager added and login account created."
+          : "Ops Manager added successfully.",
       });
     }
+
+    closeModal();
   };
 
   // =========================
@@ -181,8 +190,7 @@ const OpsManager = () => {
 
       setOpsManagers((prev) =>
         prev.filter(
-          (item) =>
-            Number(item.opsmanagerid) !== Number(opsmanagerid)
+          (item) => Number(item.opsmanagerid) !== Number(opsmanagerid)
         )
       );
 
@@ -267,22 +275,14 @@ const OpsManager = () => {
               ) : (
                 opsManagers.map((opsManager, index) => (
                   <tr key={opsManager.opsmanagerid}>
-                    <td data-label="Sl. No.">
-                      {index + 1}
-                    </td>
+                    <td data-label="Sl. No.">{index + 1}</td>
 
-                    <td data-label="Name">
-                      {opsManager.opsmanagername}
-                    </td>
+                    <td data-label="Name">{opsManager.opsmanagername}</td>
 
-                    <td data-label="Oracle ID">
-                      {opsManager.oracleid}
-                    </td>
+                    <td data-label="Oracle ID">{opsManager.oracleid}</td>
 
                     <td data-label="User account">
-                      {linkedOracleIds.has(
-                        Number(opsManager.oracleid)
-                      ) ? (
+                      {linkedOracleIds.has(Number(opsManager.oracleid)) ? (
                         <span className="ag-badge ag-badge-success">
                           Linked
                         </span>
@@ -290,9 +290,7 @@ const OpsManager = () => {
                         <button
                           type="button"
                           className="ag-btn ag-btn-ghost ag-btn-sm"
-                          onClick={() =>
-                            handleAddToUsers(opsManager)
-                          }
+                          onClick={() => handleAddToUsers(opsManager)}
                         >
                           <FiUserPlus />
                           Add to Users
@@ -306,9 +304,7 @@ const OpsManager = () => {
                           type="button"
                           className="ag-icon-btn edit"
                           title="Edit"
-                          onClick={() =>
-                            openEditModal(opsManager)
-                          }
+                          onClick={() => openEditModal(opsManager)}
                         >
                           <FiEdit2 />
                         </button>
@@ -321,15 +317,8 @@ const OpsManager = () => {
                           type="button"
                           className="ag-icon-btn delete"
                           title="Delete"
-                          onClick={() =>
-                            handleDelete(
-                              opsManager.opsmanagerid
-                            )
-                          }
-                          disabled={
-                            deletingId ===
-                            opsManager.opsmanagerid
-                          }
+                          onClick={() => handleDelete(opsManager.opsmanagerid)}
+                          disabled={deletingId === opsManager.opsmanagerid}
                         >
                           <FiTrash2 />
                         </button>
@@ -347,13 +336,10 @@ const OpsManager = () => {
         isOpen={isModalOpen}
         onClose={closeModal}
         icon={<FiUserCheck />}
-        title={
-          editingOpsManager
-            ? "Edit ops manager"
-            : "Add new ops manager"
-        }
+        title={editingOpsManager ? "Edit ops manager" : "Add new ops manager"}
       >
         <OpsManagerForm
+          locations={locations}
           handleAddOpsManager={handleAddOpsManager}
           editingOpsManager={editingOpsManager}
         />

@@ -5,6 +5,7 @@
 
 .ag-sidebar {
   --sb-w: var(--sidebar-w, 268px);
+  --sb-w-collapsed: var(--sidebar-w-collapsed, 78px);
   width: var(--sb-w);
   flex-shrink: 0;
   min-height: 100vh;
@@ -77,13 +78,11 @@
   padding: 16px 14px;
   overflow-y: auto;
   flex: 1;
-  
-  /* تجميل وتخفيض سمك شريط التمرير (Custom Scrollbar) */
+
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
 }
 
-/* تخصيص السكرول لمتصفحات كروم وسفاري */
 .ag-sidebar nav::-webkit-scrollbar {
   width: 5px;
 }
@@ -115,6 +114,7 @@
   transition: all .15s ease;
   white-space: nowrap;
   font-family: 'Cairo', sans-serif;
+  position: relative;
 }
 
 .ag-sidebar nav a svg { flex-shrink: 0; font-size: 18px; }
@@ -161,7 +161,7 @@
 }
 
 /* ---- Collapsed (icon-only) state, toggled on desktop ---- */
-.ag-sidebar.collapsed { width: var(--sidebar-w-collapsed); }
+.ag-sidebar.collapsed { width: var(--sb-w-collapsed); }
 .ag-sidebar.collapsed .brand-text,
 .ag-sidebar.collapsed nav a span,
 .ag-sidebar.collapsed .ag-logout-button span { display: none; }
@@ -169,9 +169,36 @@
 .ag-sidebar.collapsed .ag-logout-button { justify-content: center; }
 .ag-sidebar.collapsed .ag-sidebar-brand { justify-content: center; }
 
+.ag-sidebar-badge {
+    margin-left: auto;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #ff2d2dea;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ag-sidebar.collapsed .ag-sidebar-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    margin-left: 0;
+}
+
 /* ---- Responsive: sidebar becomes an off-canvas drawer on mobile ---- */
 @media (max-width: 900px) {
-  .ag-sidebar-collapse-btn { display: none !important; }
+  /* Only hide the DESKTOP collapse/expand button on mobile.
+     The mobile close (X) button uses the same base class but the
+     "desktop-only" modifier, so it stays controlled by its inline
+     display style instead of being force-hidden here. */
+  .ag-sidebar-collapse-btn.desktop-only { display: none !important; }
 
   .ag-mobile-topbar {
     display: flex;
@@ -182,7 +209,7 @@
     padding: 14px 16px;
     position: sticky;
     top: 0;
-    z-index: 45;
+    z-index: 40;
     font-family: 'Cairo', sans-serif;
   }
   .ag-mobile-topbar button {
@@ -207,6 +234,7 @@
     width: 82vw;
     max-width: 300px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    z-index: 50; /* must sit above the mobile topbar (40) and overlay (45) */
   }
   [dir="rtl"] .ag-sidebar { transform: translateX(100%); }
 
@@ -216,33 +244,6 @@
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 39;
+    z-index: 45;
   }
-}
-
-.ag-sidebar nav a {
-  position: relative;
-}
-
-.ag-sidebar-badge {
-    margin-left: auto;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
-    border-radius: 999px;
-    background: #ff2d2dea;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.ag-sidebar.collapsed .ag-sidebar-badge {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    margin-left: 0;
 }

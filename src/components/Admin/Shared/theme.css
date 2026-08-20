@@ -419,11 +419,26 @@ button, input, select, textarea { font-family: inherit; }
   font-size: 12px;
   font-weight: 700;
 }
-.ag-badge-success { background: var(--ag-gray-100); color: var(--ag-gray-900); }
-.ag-badge-muted { background: var(--ag-gray-100); color: var(--ag-gray-700); }
-.ag-badge-gold { background: var(--ag-gray-50); color: var(--ag-charcoal); border: 1px solid var(--ag-gray-200); }
-.ag-badge-danger-solid { background: var(--ag-danger-bg); color: var(--ag-danger); }
+.ag-badge-success {
+  background: var(--ag-gray-100);
+  color: var(--ag-gray-900);
+}
 
+.ag-badge-muted {
+  background: var(--ag-gray-100);
+  color: var(--ag-gray-700);
+}
+
+.ag-badge-gold {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.ag-badge-danger-solid {
+  background: var(--ag-danger-bg);
+  color: var(--ag-danger);
+}
 /* ---------------------------------------------------------------------- */
 /* Dashboard cards                                                        */
 /* ---------------------------------------------------------------------- */
