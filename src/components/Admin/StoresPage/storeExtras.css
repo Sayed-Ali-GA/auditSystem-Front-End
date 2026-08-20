@@ -1,0 +1,197 @@
+/* =====================================================
+   Store page extras — additive styles only.
+   These use an "sx-" prefix so they never collide with
+   the existing ag-* design system in theme.css.
+===================================================== */
+
+/* ---------- Toolbar / search ---------- */
+.sx-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #eef0f3;
+}
+
+.sx-search {
+  position: relative;
+  flex: 1;
+  max-width: 320px;
+}
+
+.sx-search svg {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 15px;
+}
+
+.sx-search input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px 9px 34px;
+  border: 1px solid #e2e5ea;
+  border-radius: 8px;
+  font-size: 13.5px;
+  background: #fafafa;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.sx-search input:focus {
+  outline: none;
+  border-color: #6366f1;
+  background: #fff;
+}
+
+.sx-result-count {
+  font-size: 12.5px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+/* ---------- Badges ---------- */
+.sx-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.sx-badge-success {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.sx-badge-muted {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.sx-badge-info {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.sx-badge-warning {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+/* ---------- Login modal form ---------- */
+.sx-form {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sx-store-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 4px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f9fafb;
+}
+
+.sx-store-chip-label {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 3px;
+}
+
+.sx-hint {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 10px 0 8px;
+}
+
+.sx-field {
+  margin-bottom: 14px;
+}
+
+.sx-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.sx-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13.5px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sx-field input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.sx-password-input {
+  position: relative;
+}
+
+.sx-password-input input {
+  padding-right: 38px;
+}
+
+.sx-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: #9ca3af;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.sx-password-toggle:hover {
+  color: #4b5563;
+}
+
+.sx-note {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.sx-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.sx-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
