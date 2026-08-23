@@ -6,20 +6,10 @@ import "./Login.css";
 
 const REMEMBER_KEY = "audit_remember_identifier";
 
-/* icons unchanged... */
 const UserIcon = () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <circle cx="12" cy="8" r="3.4" />
         <path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6" strokeLinecap="round" />
-    </svg>
-);
-
-const StoreIcon = () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M4 9l1-5h14l1 5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M4 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M5 9v10h14V9" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M9 19v-5h6v5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 );
 
@@ -30,24 +20,27 @@ const LockIcon = () => (
     </svg>
 );
 
+// An Oracle ID is always numeric (e.g. "102553"). A Store Code is not
+// (e.g. "BHA-LC-1045"). This lets one field silently route to the right
+// login endpoint instead of making the person pick a "login type" first.
+const isOracleId = (value) => /^\d+$/.test(value);
+
 const Login = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const [loginMode, setLoginMode] = useState("employee");
     const [identifier, setIdentifier] = useState("");
     const [Password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Restore a remembered identifier for the last-used mode, if any.
+    // Restore a remembered identifier, if any.
     useEffect(() => {
         try {
             const saved = JSON.parse(localStorage.getItem(REMEMBER_KEY) || "null");
-            if (saved?.mode) {
-                setLoginMode(saved.mode);
-                setIdentifier(saved.identifier || "");
+            if (saved?.identifier) {
+                setIdentifier(saved.identifier);
                 setRememberMe(true);
             }
         } catch {
@@ -55,24 +48,13 @@ const Login = () => {
         }
     }, []);
 
-    const switchMode = (mode) => {
-        setLoginMode(mode);
-        setIdentifier("");
-        setPassword("");
-        setError("");
-    };
-
     const handleSubmit = async (event) => {
         event.preventDefault();
 
         const trimmedIdentifier = identifier.trim();
 
         if (!trimmedIdentifier || !Password) {
-            setError(
-                loginMode === "store"
-                    ? "Please enter the Store Code and password."
-                    : "Please enter your Oracle ID and password."
-            );
+            setError("Please enter your ID and password.");
             return;
         }
 
@@ -80,21 +62,20 @@ const Login = () => {
         setIsSubmitting(true);
 
         try {
-            const data =
-                loginMode === "store"
-                    ? await userService.storeLogin({
-                          StoreCode: trimmedIdentifier,
-                          Password,
-                      })
-                    : await userService.login({
-                          OracleID: trimmedIdentifier,
-                          Password,
-                      });
+            const data = isOracleId(trimmedIdentifier)
+                ? await userService.login({
+                      OracleID: trimmedIdentifier,
+                      Password,
+                  })
+                : await userService.storeLogin({
+                      StoreCode: trimmedIdentifier,
+                      Password,
+                  });
 
             if (rememberMe) {
                 localStorage.setItem(
                     REMEMBER_KEY,
-                    JSON.stringify({ mode: loginMode, identifier: trimmedIdentifier })
+                    JSON.stringify({ identifier: trimmedIdentifier })
                 );
             } else {
                 localStorage.removeItem(REMEMBER_KEY);
@@ -103,7 +84,7 @@ const Login = () => {
             login(data);
             navigate("/");
         } catch (err) {
-            setError(err.message || "Failed to log in.");
+            setError(err.message || "Invalid ID or password.");
         } finally {
             setIsSubmitting(false);
         }
@@ -138,36 +119,8 @@ const Login = () => {
                         <div className="form-eyebrow">Restricted Access</div>
                         <h1 className="form-title">Sign in</h1>
                         <p className="form-subtitle">
-                            {loginMode === "store"
-                                ? "Enter the store code and its login password."
-                                : "Enter your Oracle ID and password to continue."}
+                            Enter your ID and password to continue.
                         </p>
-
-                        <div className="login-mode-switch" role="tablist">
-                            <button
-                                type="button"
-                                role="tab"
-                                aria-selected={loginMode === "employee"}
-                                className={`login-mode-btn ${loginMode === "employee" ? "active" : ""}`}
-                                onClick={() => switchMode("employee")}
-                                disabled={isSubmitting}
-                            >
-                                <UserIcon />
-                                Employee Login
-                            </button>
-
-                            <button
-                                type="button"
-                                role="tab"
-                                aria-selected={loginMode === "store"}
-                                className={`login-mode-btn ${loginMode === "store" ? "active" : ""}`}
-                                onClick={() => switchMode("store")}
-                                disabled={isSubmitting}
-                            >
-                                <StoreIcon />
-                                Store Login
-                            </button>
-                        </div>
 
                         {error && (
                             <p className="luxury-error-alert" role="alert">
@@ -178,10 +131,10 @@ const Login = () => {
                         <form className="luxury-form" onSubmit={handleSubmit} noValidate>
                             <div className="luxury-input-group">
                                 <label className="luxury-label" htmlFor="identifier">
-                                    {loginMode === "store" ? "Store Code" : "Oracle ID"}
+                                    ID
                                 </label>
                                 <div className="input-wrapper">
-                                    {loginMode === "store" ? <StoreIcon /> : <UserIcon />}
+                                    <UserIcon />
                                     <input
                                         id="identifier"
                                         type="text"
@@ -190,11 +143,7 @@ const Login = () => {
                                         onChange={(e) => setIdentifier(e.target.value)}
                                         autoComplete="username"
                                         disabled={isSubmitting}
-                                        placeholder={
-                                            loginMode === "store"
-                                                ? "e.g. BHA-LC-1045"
-                                                : "Enter your ID"
-                                        }
+                                        placeholder="Oracle ID or Store Code"
                                         className="luxury-input"
                                     />
                                 </div>

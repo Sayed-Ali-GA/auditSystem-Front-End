@@ -17,8 +17,16 @@ const getUserFromToken = () => {
             RoleID: decoded.RoleID,
             LocationID: decoded.LocationID,
             UserName: decoded.UserName,
+
             StoreSerial: decoded.StoreSerial,
             StoreCode: decoded.StoreCode,
+            StoreManagerID: decoded.StoreManagerID,
+
+            BrandID: decoded.BrandID,
+            BrandName: decoded.BrandName,
+
+            LocationName: decoded.LocationName,
+
             IsStoreAccount: Boolean(decoded.IsStoreAccount),
         };
     } catch (error) {
@@ -52,8 +60,16 @@ const login = useCallback(({ token: newToken }) => {
         RoleID: decoded.RoleID,
         LocationID: decoded.LocationID,
         UserName: decoded.UserName,
+
         StoreSerial: decoded.StoreSerial,
         StoreCode: decoded.StoreCode,
+        StoreManagerID: decoded.StoreManagerID,
+
+        BrandID: decoded.BrandID,
+        BrandName: decoded.BrandName,
+
+        LocationName: decoded.LocationName,
+
         IsStoreAccount: Boolean(decoded.IsStoreAccount),
     };
 

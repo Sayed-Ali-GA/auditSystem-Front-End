@@ -1,3 +1,4 @@
+// src/components/Admin/HomePage/HomePage.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -60,6 +61,7 @@ const HomePage = () => {
   const roleId = Number(currentUser?.RoleID);
   const isAdmin = roleId === 1;
   const isAuditor = roleId === 4;
+  const isStoreAccount = Boolean(currentUser?.IsStoreAccount);
   const canViewAudits = [1, 2, 3, 5].includes(roleId);
 
   const [audits, setAudits] = useState([]);
@@ -87,7 +89,7 @@ const HomePage = () => {
 
         const [auditResult, storeResult] = await Promise.all([
           auditServices.index(),
-          storeServices.index(),
+          isAdmin ? storeServices.index() : Promise.resolve([]),
         ]);
 
         if (!mounted) return;
@@ -114,7 +116,7 @@ const HomePage = () => {
     return () => {
       mounted = false;
     };
-  }, [currentUser]);
+  }, [currentUser, isAdmin]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -192,7 +194,9 @@ const HomePage = () => {
     };
   }, [isAdmin]);
 
-  const roleName = ROLE_NAMES[roleId] || "User";
+  const roleName = isStoreAccount
+    ? `Store Account${currentUser?.BrandName ? ` — ${currentUser.BrandName}` : ""}`
+    : ROLE_NAMES[roleId] || "User";
 
   const pendingAudits = useMemo(() => {
     if (!currentUser || !Array.isArray(audits)) {
@@ -241,15 +245,18 @@ const HomePage = () => {
     return stats;
   }, [audits]);
 
-  const heroDescription =
-    {
-      1: "Centralized control of users, stores, operational structure and audit activity.",
-      2: "Monitor assigned operational activity, audit workflow and outstanding actions.",
-      3: "Review store audit activity, findings and required operational actions.",
-      4: "Conduct assigned audits, record observations and submit accurate findings.",
-      5: "Review submitted audits, manage findings and control the audit workflow.",
-    }[roleId] ||
-    "Centralized access to your assigned activities and audit workspace.";
+  const heroDescription = isStoreAccount
+    ? "Review your store's audit activity, findings and required actions."
+    : (
+        {
+          1: "Centralized control of users, stores, operational structure and audit activity.",
+          2: "Monitor assigned operational activity, audit workflow and outstanding actions.",
+          3: "Review store audit activity, findings and required operational actions.",
+          4: "Conduct assigned audits, record observations and submit accurate findings.",
+          5: "Review submitted audits, manage findings and control the audit workflow.",
+        }[roleId] ||
+        "Centralized access to your assigned activities and audit workspace."
+      );
 
   const quickActions = useMemo(() => {
     if (isAdmin) {
@@ -325,10 +332,6 @@ const HomePage = () => {
 
   return (
     <div className="ag-main ag-home-page">
-      {/* =========================================================
-                HEADER
-            ========================================================= */}
-
       <section className="ag-home-header">
         <div className="ag-home-header-main">
           <div className="ag-home-overline">
@@ -356,10 +359,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* =========================================================
-                KPI
-            ========================================================= */}
-
       <section className="ag-home-kpis">
         <Link to="/tasks" className="ag-home-kpi">
           <div className="ag-home-kpi-icon">
@@ -376,7 +375,7 @@ const HomePage = () => {
         </Link>
 
         {canViewAudits && (
-          <div className="ag-home-kpi">
+          <Link to="/Audits" className="ag-home-kpi">
             <div className="ag-home-kpi-icon">
               <FiClipboard />
             </div>
@@ -385,6 +384,22 @@ const HomePage = () => {
               <span>AUDITS</span>
               <strong>{auditStats.total}</strong>
               <small>Accessible records</small>
+            </div>
+
+            <FiArrowRight className="ag-home-kpi-arrow" />
+          </Link>
+        )}
+
+        {canViewAudits && (
+          <div className="ag-home-kpi">
+            <div className="ag-home-kpi-icon">
+              <FiCheckCircle />
+            </div>
+
+            <div className="ag-home-kpi-content">
+              <span>COMPLETED</span>
+              <strong>{auditStats.completed}</strong>
+              <small>Closed audits</small>
             </div>
           </div>
         )}
@@ -422,10 +437,6 @@ const HomePage = () => {
         )}
       </section>
 
-      {/* =========================================================
-                WORKSPACE
-            ========================================================= */}
-
       <section className="ag-home-workspace">
         <div className="ag-home-panel">
           <div className="ag-home-panel-header">
@@ -446,9 +457,7 @@ const HomePage = () => {
                 <Link
                   key={action.title}
                   to={action.to}
-                  className={`ag-home-action ${
-                    action.primary ? "is-primary" : ""
-                  }`}
+                  className={`ag-home-action ${action.primary ? "is-primary" : ""}`}
                 >
                   <div className="ag-home-action-icon">
                     <Icon />
@@ -501,9 +510,7 @@ const HomePage = () => {
 
             <section>
               <strong>
-                {pendingAudits.length > 0
-                  ? "Action required"
-                  : "No pending actions"}
+                {pendingAudits.length > 0 ? "Action required" : "No pending actions"}
               </strong>
 
               <p>
@@ -524,10 +531,6 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-
-      {/* =========================================================
-                ADMINISTRATION
-            ========================================================= */}
 
       {isAdmin && (
         <section className="ag-home-panel ag-home-section">
@@ -617,10 +620,6 @@ const HomePage = () => {
         </section>
       )}
 
-      {/* =========================================================
-                AUDIT CONTROL
-            ========================================================= */}
-
       {canViewAudits && (
         <section className="ag-home-panel ag-home-section">
           <div className="ag-home-panel-header">
@@ -663,10 +662,6 @@ const HomePage = () => {
           </div>
         </section>
       )}
-
-      {/* =========================================================
-                AUDITOR ACTION
-            ========================================================= */}
 
       {isAuditor && (
         <section className="ag-home-auditor">

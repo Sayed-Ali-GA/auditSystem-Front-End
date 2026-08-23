@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import Swal from "sweetalert2";
 
@@ -20,7 +20,6 @@ import locationServices from "../../../services/locationServices";
 import UserForm from "./UserForm";
 
 import PageHeader from "../Shared/PageHeader";
-import LoadingState from "../Shared/LoadingState";
 import Modal from "../Shared/Modal";
 
 import "../Shared/theme.css";
@@ -33,6 +32,49 @@ const roleNames = {
   4: "Auditor",
   5: "Audit Manager",
 };
+
+const ROLE_FILTER_OPTIONS = Object.entries(roleNames).map(([value, label]) => ({
+  value,
+  label,
+}));
+
+const STATUS_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "active", label: "Active" },
+  { value: "disabled", label: "Disabled" },
+];
+
+const isUserActive = (user) =>
+  user.isactive === true ||
+  user.isactive === "true" ||
+  user.isactive === 1 ||
+  user.isactive === "1";
+
+const getInitials = (name = "") =>
+  name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() || "?";
+
+const SkeletonRows = ({ rows = 5 }) => (
+  <>
+    {Array.from({ length: rows }).map((_, index) => (
+      <tr className="ag-skeleton-row" key={`skeleton-${index}`}>
+        {Array.from({ length: 6 }).map((__, cellIndex) => (
+          <td key={cellIndex}>
+            <div
+              className="ag-skeleton-bar"
+              style={{ width: cellIndex === 5 ? "70%" : "85%" }}
+            />
+          </td>
+        ))}
+      </tr>
+    ))}
+  </>
+);
 
 const Users = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -48,6 +90,10 @@ const Users = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState(null);
+
   /*
    * role from URL
    *
@@ -59,17 +105,16 @@ const Users = () => {
   const roleFromUrl = searchParams.get("role");
 
   const oracleIdFromUrl = searchParams.get("oracleId");
-const userNameFromUrl = searchParams.get("userName");
-const locationIdFromUrl = searchParams.get("locationId");
+  const userNameFromUrl = searchParams.get("userName");
+  const locationIdFromUrl = searchParams.get("locationId");
 
-
-useEffect(() => {
-  if (oracleIdFromUrl) {
-    setEditingUser(null);
-    setIsModalOpen(true);
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [oracleIdFromUrl]);
+  useEffect(() => {
+    if (oracleIdFromUrl) {
+      setEditingUser(null);
+      setIsModalOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oracleIdFromUrl]);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -79,10 +124,10 @@ useEffect(() => {
       const data = await userService.index();
 
       setUsers(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Failed to load users:", error);
+    } catch (err) {
+      console.error("Failed to load users:", err);
 
-      setError(error.message || "Cannot load users.");
+      setError(err.message || "Cannot load users.");
       setUsers([]);
     } finally {
       setLoading(false);
@@ -99,8 +144,8 @@ useEffect(() => {
         const data = await locationServices.index();
 
         setLocations(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("Failed to load locations:", error);
+      } catch (err) {
+        console.error("Failed to load locations:", err);
       }
     };
 
@@ -126,14 +171,14 @@ useEffect(() => {
   // ==========================================
   // CLOSE
   // ==========================================
-const closeModal = () => {
-  setIsModalOpen(false);
-  setEditingUser(null);
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingUser(null);
 
-  if (roleFromUrl || oracleIdFromUrl) {
-    setSearchParams({});
-  }
-};
+    if (roleFromUrl || oracleIdFromUrl) {
+      setSearchParams({});
+    }
+  };
 
   // ==========================================
   // ADD / UPDATE
@@ -141,20 +186,18 @@ const closeModal = () => {
   const handleAddUser = async (userData) => {
     try {
       if (editingUser) {
-        const updatedUser = await userService.update(
-          editingUser.userid,
-          {
-            UserName: userData.UserName,
-            LocationID: userData.LocationID,
-            RoleID: userData.RoleID,
+        const updatedUser = await userService.update(editingUser.userid, {
+          UserName: userData.UserName,
+          LocationID: userData.LocationID,
+          RoleID: userData.RoleID,
+          Email: userData.Email,
 
-            ...(userData.Password
-              ? {
-                  Password: userData.Password,
-                }
-              : {}),
-          },
-        );
+          ...(userData.Password
+            ? {
+                Password: userData.Password,
+              }
+            : {}),
+        });
 
         setUsers((prev) =>
           prev.map((user) =>
@@ -189,10 +232,10 @@ const closeModal = () => {
       }
 
       closeModal();
-    } catch (error) {
-      console.error("Failed to save user:", error);
+    } catch (err) {
+      console.error("Failed to save user:", err);
 
-      throw error;
+      throw err;
     }
   };
 
@@ -208,6 +251,7 @@ const closeModal = () => {
       confirmButtonText: "Disable",
       cancelButtonText: "Cancel",
       reverseButtons: true,
+      confirmButtonColor: "#dc2626",
     });
 
     if (!result.isConfirmed) return;
@@ -224,11 +268,11 @@ const closeModal = () => {
         timer: 1500,
         showConfirmButton: false,
       });
-    } catch (error) {
+    } catch (err) {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: error.message || "Could not disable user.",
+        text: err.message || "Could not disable user.",
       });
     }
   };
@@ -260,11 +304,11 @@ const closeModal = () => {
         timer: 1500,
         showConfirmButton: false,
       });
-    } catch (error) {
+    } catch (err) {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: error.message || "Could not enable user.",
+        text: err.message || "Could not enable user.",
       });
     }
   };
@@ -289,9 +333,7 @@ const closeModal = () => {
     try {
       await userService.remove(user.userid);
 
-      setUsers((prev) =>
-        prev.filter((item) => item.userid !== user.userid),
-      );
+      setUsers((prev) => prev.filter((item) => item.userid !== user.userid));
 
       if (selectedUser?.user?.userid === user.userid) {
         setSelectedUser(null);
@@ -303,60 +345,110 @@ const closeModal = () => {
         timer: 1500,
         showConfirmButton: false,
       });
-    } catch (error) {
+    } catch (err) {
       Swal.fire({
         icon: "error",
         title: "Cannot delete user",
-        text:
-          error.message ||
-          "This user may be linked to existing records.",
+        text: err.message || "This user may be linked to existing records.",
       });
     }
   };
 
   // ==========================================
-  // SEARCH OPTIONS
+  // SEARCH OPTIONS (quick jump-to-user)
   // ==========================================
-  const userOptions = users.map((user) => ({
-    value: user.userid,
-    label: `${user.username} - ${user.oracleid}`,
-    user,
-  }));
+  const userOptions = useMemo(
+    () =>
+      users.map((user) => ({
+        value: user.userid,
+        label: `${user.username} - ${user.oracleid}`,
+        user,
+      })),
+    [users],
+  );
 
   // ==========================================
-  // LOADING
+  // FILTERING
   // ==========================================
-  if (loading) {
-    return (
-      <div className="ag-main">
-        <LoadingState label="Loading users..." />
-      </div>
-    );
-  }
+  const filteredUsers = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+
+    return users.filter((user) => {
+      if (selectedUser && user.userid !== selectedUser.value) return false;
+
+      if (statusFilter === "active" && !isUserActive(user)) return false;
+      if (statusFilter === "disabled" && isUserActive(user)) return false;
+
+      if (roleFilter && String(user.roleid) !== roleFilter.value) return false;
+
+      if (!term) return true;
+
+      const haystack = [
+        user.username,
+        user.oracleid,
+        user.email,
+        user.locationname,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(term);
+    });
+  }, [users, selectedUser, statusFilter, roleFilter, searchTerm]);
+
+  const hasActiveFilters =
+    Boolean(searchTerm) ||
+    statusFilter !== "all" ||
+    Boolean(roleFilter) ||
+    Boolean(selectedUser);
+
+  const resetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("all");
+    setRoleFilter(null);
+    setSelectedUser(null);
+  };
 
   // ==========================================
-  // ERROR
+  // ERROR (no data at all)
   // ==========================================
-  if (error) {
+  if (error && users.length === 0 && !loading) {
     return (
       <div className="ag-main">
+        <PageHeader
+          icon={<FiUsers />}
+          eyebrow="Access"
+          title="Users"
+          subtitle="Create system accounts and manage their access."
+        />
+
         <div className="ag-card">
-          <div className="ag-error-banner">
+          <div className="ag-error-banner" role="alert">
             {error}
           </div>
+
+          <button
+            type="button"
+            className="ag-btn ag-btn-ghost"
+            onClick={fetchUsers}
+          >
+            Try again
+          </button>
         </div>
       </div>
     );
   }
 
   const prefillData = oracleIdFromUrl
-  ? {
-      oracleId: oracleIdFromUrl,
-      userName: userNameFromUrl || "",
-      role: roleFromUrl || "",
-      locationId: locationIdFromUrl ? Number(locationIdFromUrl) : null,
-    }
-  : null;
+    ? {
+        oracleId: oracleIdFromUrl,
+        userName: userNameFromUrl || "",
+        role: roleFromUrl || "",
+        locationId: locationIdFromUrl ? Number(locationIdFromUrl) : null,
+      }
+    : null;
+
   // ==========================================
   // UI
   // ==========================================
@@ -375,6 +467,11 @@ const closeModal = () => {
           <div className="ag-card-title">
             <FiUsers />
             All users
+            {!loading && (
+              <span className="ag-card-title-count">
+                {filteredUsers.length} of {users.length}
+              </span>
+            )}
           </div>
 
           <button
@@ -387,36 +484,84 @@ const closeModal = () => {
           </button>
         </div>
 
-        {/* SEARCH */}
-        <div
-          className="ag-field"
-          style={{
-            maxWidth: 360,
-            marginBottom: 18,
-          }}
-        >
-          <label>
+        {/* TOOLBAR: search + filters */}
+        <div className="ag-toolbar">
+          <div className="ag-search-field">
             <FiSearch />
-            Search
-          </label>
+            <input
+              type="text"
+              placeholder="Search by name, Oracle ID, email, location..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search users"
+            />
+          </div>
 
-          <Select
-            classNamePrefix="ag-rs"
-            options={userOptions}
-            placeholder="Search user..."
-            isClearable
-            value={selectedUser}
-            onChange={setSelectedUser}
-          />
+          <div
+            className="ag-filter-group"
+            role="group"
+            aria-label="Filter by status"
+          >
+            {STATUS_FILTERS.map((filter) => (
+              <button
+                key={filter.value}
+                type="button"
+                className={`ag-chip ${statusFilter === filter.value ? "is-active" : ""}`}
+                onClick={() => setStatusFilter(filter.value)}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="ag-role-filter">
+            <Select
+              classNamePrefix="ag-rs"
+              options={ROLE_FILTER_OPTIONS}
+              placeholder="Filter by role"
+              isClearable
+              value={roleFilter}
+              onChange={setRoleFilter}
+              aria-label="Filter by role"
+            />
+          </div>
+
+          <div style={{ minWidth: 220, flex: "1 1 220px", maxWidth: 320 }}>
+            <Select
+              classNamePrefix="ag-rs"
+              options={userOptions}
+              placeholder="Jump to a specific user..."
+              isClearable
+              value={selectedUser}
+              onChange={setSelectedUser}
+              aria-label="Jump to a specific user"
+            />
+          </div>
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              className="ag-toolbar-reset"
+              onClick={resetFilters}
+            >
+              Clear filters
+            </button>
+          )}
         </div>
+
+        {error && users.length > 0 && (
+          <div className="ag-error-banner" role="alert">
+            {error}
+          </div>
+        )}
 
         {/* TABLE */}
         <div className="ag-table-wrap">
           <table className="ag-table">
             <thead>
               <tr>
+                <th>User</th>
                 <th>Oracle ID</th>
-                <th>Username</th>
                 <th>Location</th>
                 <th>Role</th>
                 <th>Status</th>
@@ -425,106 +570,122 @@ const closeModal = () => {
             </thead>
 
             <tbody>
-              {(selectedUser
-                ? [selectedUser.user]
-                : users
-              ).map((user) => {
-                const isActive =
-                  user.isactive === true ||
-                  user.isactive === "true" ||
-                  user.isactive === 1 ||
-                  user.isactive === "1";
+              {loading && <SkeletonRows />}
 
-                return (
-                  <tr key={user.userid}>
-                    <td data-label="Oracle ID">
-                      {user.oracleid}
-                    </td>
+              {!loading &&
+                filteredUsers.map((user) => {
+                  const active = isUserActive(user);
 
-                    <td data-label="Username">
-                      {user.username}
-                    </td>
+                  return (
+                    <tr key={user.userid}>
+                      <td data-label="User">
+                        <div className="ag-user-cell">
+                          <span className="ag-avatar">
+                            {getInitials(user.username)}
+                          </span>
+                          <div>
+                            <div className="ag-user-name">{user.username}</div>
+                            {user.email && (
+                              <div className="ag-user-sub">{user.email}</div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
 
-                    <td data-label="Location">
-                      {user.locationname || "-"}
-                    </td>
+                      <td data-label="Oracle ID" className="ag-mono">
+                        {user.oracleid}
+                      </td>
 
-                    <td data-label="Role">
-                      {roleNames[user.roleid] || "Unknown"}
-                    </td>
+                      <td data-label="Location">{user.locationname || "-"}</td>
 
-                    <td data-label="Status">
-                      <span
-                        className={`ag-badge ${
-                          isActive
-                            ? "ag-badge-success"
-                            : "ag-badge-muted"
-                        }`}
-                      >
-                        {isActive ? "Active" : "Disabled"}
-                      </span>
-                    </td>
+                      <td data-label="Role">
+                        <span className="ag-role-pill">
+                          {roleNames[user.roleid] || "Unknown"}
+                        </span>
+                      </td>
 
-                    <td data-label="Actions">
-                      <div className="ag-row-actions">
-                        <button
-                          type="button"
-                          className="ag-icon-btn edit"
-                          title="Edit"
-                          onClick={() =>
-                            openEditModal(user)
-                          }
+                      <td data-label="Status">
+                        <span
+                          className={`ag-badge ${active ? "ag-badge-success" : "ag-badge-muted"}`}
                         >
-                          <FiEdit2 />
-                        </button>
+                          {active ? "Active" : "Disabled"}
+                        </span>
+                      </td>
 
-                        {isActive ? (
+                      <td data-label="Actions">
+                        <div className="ag-row-actions">
                           <button
                             type="button"
-                            className="ag-icon-btn disable"
-                            title="Disable"
-                            onClick={() =>
-                              handleDisable(user)
-                            }
+                            className="ag-icon-btn edit"
+                            title="Edit"
+                            aria-label={`Edit ${user.username}`}
+                            onClick={() => openEditModal(user)}
                           >
-                            <FiSlash />
+                            <FiEdit2 />
                           </button>
-                        ) : (
+
+                          {active ? (
+                            <button
+                              type="button"
+                              className="ag-icon-btn disable"
+                              title="Disable"
+                              aria-label={`Disable ${user.username}`}
+                              onClick={() => handleDisable(user)}
+                            >
+                              <FiSlash />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="ag-icon-btn enable"
+                              title="Enable"
+                              aria-label={`Enable ${user.username}`}
+                              onClick={() => handleEnable(user)}
+                            >
+                              <FiUnlock />
+                            </button>
+                          )}
+
                           <button
                             type="button"
-                            className="ag-icon-btn enable"
-                            title="Enable"
-                            onClick={() =>
-                              handleEnable(user)
-                            }
+                            className="ag-icon-btn delete"
+                            title="Delete"
+                            aria-label={`Delete ${user.username}`}
+                            onClick={() => handleDelete(user)}
                           >
-                            <FiUnlock />
+                            <FiTrash2 />
                           </button>
-                        )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
 
-                        <button
-                          type="button"
-                          className="ag-icon-btn delete"
-                          title="Delete"
-                          onClick={() =>
-                            handleDelete(user)
-                          }
-                        >
-                          <FiTrash2 />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {users.length === 0 && (
+              {!loading && users.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="ag-empty-state"
-                  >
-                    No users found.
+                  <td colSpan={6} className="ag-empty-state">
+                    <div className="ag-empty-state-title">No users yet</div>
+                    Add your first system account to get started.
+                  </td>
+                </tr>
+              )}
+
+              {!loading && users.length > 0 && filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="ag-empty-state">
+                    <div className="ag-empty-state-title">
+                      No users match your filters
+                    </div>
+                    Try a different search term or{" "}
+                    <button
+                      type="button"
+                      className="ag-toolbar-reset"
+                      style={{ display: "inline", padding: 0 }}
+                      onClick={resetFilters}
+                    >
+                      clear filters
+                    </button>
+                    .
                   </td>
                 </tr>
               )}
@@ -548,14 +709,13 @@ const closeModal = () => {
                 : "Add new user"
         }
       >
-      <UserForm
-        editingUser={editingUser}
-        locations={locations}
-        handleAddUser={handleAddUser}
-        onCancelEdit={closeModal}
-        prefillData={prefillData}
-      />
-      
+        <UserForm
+          editingUser={editingUser}
+          locations={locations}
+          handleAddUser={handleAddUser}
+          onCancelEdit={closeModal}
+          prefillData={prefillData}
+        />
       </Modal>
     </div>
   );

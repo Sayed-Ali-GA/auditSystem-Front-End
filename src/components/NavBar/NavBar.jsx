@@ -1,6 +1,7 @@
+// src/components/NavBar/NavBar.jsx
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FiLogOut, FiBell } from "react-icons/fi";
+import { FiLogOut, FiBell, FiShoppingBag } from "react-icons/fi";
 import { useAuth } from "../../components/Authcontext/Authcontext";
 import notificationServices from "../../services/NotificationServices";
 import "./NavBar.css";
@@ -14,7 +15,6 @@ const typeIcon = {
 
 const NavBar = () => {
   const { logout, user } = useAuth();
-  // console.log("CURRENT USER:", user);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -127,7 +127,7 @@ const NavBar = () => {
     const days = Math.floor(hrs / 24);
     return `${days}d ago`;
   };
-
+console.log("NAVBAR USER:", user);
   return (
     <header className="navbar">
       <div className="navbar-left">
@@ -139,6 +139,13 @@ const NavBar = () => {
       </div>
 
       <div className="navbar-right">
+        {user?.IsStoreAccount && (
+          <div className="brand-chip">
+            <FiShoppingBag />
+            <span>{user.BrandName || user.StoreCode}</span>
+          </div>
+        )}
+
         <div className="nav-bell-wrap" ref={dropdownRef}>
           <button
             className="nav-bell-btn"
@@ -188,18 +195,19 @@ const NavBar = () => {
             </div>
           )}
         </div>
-<div className="user-info">
-  <div className="avatar">
-    {user?.UserName?.charAt(0).toUpperCase()}
-  </div>
 
-  <div>
-    <strong>{user?.UserName}</strong>
-    <p>
-      {user?.IsStoreAccount ? "Store Account" : roleNames[user?.RoleID]}
-    </p>
-  </div>
-</div>
+        <div className="user-info">
+          <div className="avatar">
+            {user?.UserName?.charAt(0).toUpperCase()}
+          </div>
+
+          <div>
+            <strong>{user?.UserName}</strong>
+            <p>
+              {user?.IsStoreAccount ? "Store Account" : roleNames[user?.RoleID]}
+            </p>
+          </div>
+        </div>
 
         <button className="logout-button" onClick={handleLogout}>
           <FiLogOut />
